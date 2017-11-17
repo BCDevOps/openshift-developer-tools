@@ -6,7 +6,11 @@ Unfortunately the code contained in a Jenkins file is unable to affect the Pipel
 
 This example takes steps at the next available level to short-circuit the process, and avoids triggering builds and deployments when there are no changes in the context directory for the pipeline.  A 'build' in the Jenkins sense still gets kicked off, but we avoid re-building and deploying things unnecessarily.
 
-For an example of how to use this Jankins file in context, have a look at [TheOrgBook API](https://github.com/bcgov/TheOrgBook/tree/master/tob-api)
+# Examples
+
+For an example of how to use this Jenkins file in context, have a look at [TheOrgBook Solr](https://github.com/bcgov/TheOrgBook/tree/master/tob-solr)
+
+Example of the changes this process makes to an existing pipeline; [Jenkinsfile](https://github.com/WadeBarnes/TheOrgBook/commit/fe580ad430567e87b9d5f2bba1461526108b617b#diff-c425b9c6357af57f2c5f73daa0a9999c)
 
 # Future Enhancements
 
