@@ -10,11 +10,6 @@ fi
 if [ -f ${OCTOOLSBIN}/ocFunctions.inc ]; then
   . ${OCTOOLSBIN}/ocFunctions.inc
 fi
-# Set project and local environment variables
-if [ -f settings.sh ]; then
-  echo -e \\n"Loading default component settings from settings.sh ..."\\n
-  . settings.sh
-fi
 
 # Turn on debugging if asked
 if [ ! -z "${DEBUG}" ]; then
@@ -31,7 +26,7 @@ _localParamsDir=openshift
 
 # Process the pipeline for each one ...
 for _jenkinsFile in ${JENKINS_FILES}; do
-  echo "Processing Jenkins Pipeline; ${_jenkinsFile}  ..."
+  echo -e \\n"Processing Jenkins Pipeline; ${_jenkinsFile}  ..."
 
   _template="${PIPELINE_JSON}"
   _defaultParams=$(getPipelineParameterFileOutputPath "${_jenkinsFile}")
