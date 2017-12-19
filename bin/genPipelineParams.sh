@@ -70,7 +70,7 @@ generatePipelineParameterFilter (){
 
   _directory=$(getDirectory ${_jenkinsFile})
   _jenkinsFileName=$(getJenkinsFileName ${_jenkinsFile})
-  _contextDirectory=$(getComponentNameFromDir ${_directory})
+  _contextDirectory=$(getContextDirectory ${_directory})
   _componentName=$(getComponentNameFromDir ${_directory})
   _pipelineName=$(getPipelineName "${_jenkinsFileName}" "${_componentName}")
 

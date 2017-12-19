@@ -140,13 +140,24 @@ getComponentNameFromDir () {
     exit 1
   fi
 
-  _componentDir_FullName=$(echo ${_componentDir##*/} | sed 's/^\.//')
-  _componentDir_Name=$(echo ${_componentDir%.*} | sed 's/^\.//')
+  _componentDir_FullName=$(echo ${_componentDir##*/} | sed 's~^\.~~')
+  _componentDir_Name=$(echo ${_componentDir%.*} | sed 's~^\.~~')
   if [ -z "${_componentDir_Name}" ]; then
     echo ${_componentDir_FullName}
   else
     echo ${_componentDir_Name}
   fi
+}
+
+getContextDirectory () {
+  _componentDir=${1}
+  if [ -z "${_componentDir}" ]; then
+    echo -e \\n"getContextDirectoryFromDir; Missing parameter!"\\n
+    exit 1
+  fi
+
+  _contextDirectory=$(echo ${_componentDir} | sed 's~^\.~~;s~^\/~~')
+  echo ${_contextDirectory}
 }
 
 getJenkinsFileName () {
