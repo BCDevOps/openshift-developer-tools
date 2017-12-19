@@ -30,8 +30,10 @@ for _jenkinsFile in ${JENKINS_FILES}; do
 
   _template="${PIPELINE_JSON}"
   _defaultParams=$(getPipelineParameterFileOutputPath "${_jenkinsFile}")
-  _localParams=$(getPipelineParameterFileOutputPath "${_jenkinsFile}" "${_localParamsDir}")
-  _output="${_jenkinsFile}-pipeline_BuildConfig.json"
+  _output="${_jenkinsFile}-pipeline_BuildConfig.json"  
+  if [ ! -z "${APPLY_LOCAL_SETTINGS}" ]; then
+    _localParams=$(getPipelineParameterFileOutputPath "${_jenkinsFile}" "${_localParamsDir}")
+  fi
 
   if [ -f "${_defaultParams}" ]; then
     _defaultParams="--param-file=${_defaultParams}"

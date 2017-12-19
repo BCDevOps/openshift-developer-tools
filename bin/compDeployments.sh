@@ -12,11 +12,6 @@ if [ -f ${OCTOOLSBIN}/ocFunctions.inc ]; then
   . ${OCTOOLSBIN}/ocFunctions.inc
 fi
 
-if [ -f settings.sh ]; then
-  echo -e \\n"Loading default component settings from settings.sh ..."\\n
-  . settings.sh
-fi
-
 # Turn on debugging if asked
 if [ ! -z "${DEBUG}" ]; then
   set -x
@@ -36,14 +31,16 @@ exitOnError
 LOCAL_PARAM_DIR=${PROJECT_OS_DIR}
 
 for deploy in ${DEPLOYS}; do
-  echo -e "Processing deployment configuration; ${deploy} ..."\\n
+  echo -e \\n"Processing deployment configuration; ${deploy} ..."\\n
 
   JSONFILE="${TEMPLATE_DIR}/${deploy}.json"
   JSONTMPFILE=$( basename ${deploy}_DeploymentConfig.json )
   PARAMFILE=$( basename ${deploy}.param )
   ENVPARAM=$( basename ${deploy}.${DEPLOYMENT_ENV_NAME}.param )
-  LOCALPARAM=${LOCAL_PARAM_DIR}/$( basename ${deploy}.local.param )
-
+  if [ ! -z "${APPLY_LOCAL_SETTINGS}" ]; then
+    LOCALPARAM=${LOCAL_PARAM_DIR}/$( basename ${deploy}.local.param )
+  fi
+  
   if [ -f "${PARAMFILE}" ]; then
     PARAMFILE="--param-file=${PARAMFILE}"
   else
