@@ -33,7 +33,7 @@ oc project ${PROJECT_NAMESPACE}-${DEPLOYMENT_ENV_NAME} >/dev/null
 exitOnError
 
 # Local params file path MUST be relative...Hack!
-LOCAL_PARAM_DIR=../../openshift
+LOCAL_PARAM_DIR=${PROJECT_OS_DIR}
 
 for deploy in ${DEPLOYS}; do
   echo -e "Processing deployment configuration; ${deploy} ..."\\n

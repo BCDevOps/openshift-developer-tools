@@ -12,11 +12,6 @@ if [ -f ${OCTOOLSBIN}/ocFunctions.inc ]; then
   . ${OCTOOLSBIN}/ocFunctions.inc
 fi
 
-if [ -f settings.sh ]; then
-  echo -e \\n"Loading default component settings from settings.sh ..."\\n
-  . settings.sh
-fi
-
 # Turn on debugging if asked
 if [ ! -z "${DEBUG}" ]; then
   set -x
@@ -32,11 +27,11 @@ oc project ${TOOLS} >/dev/null
 exitOnError
 
 # Local params file path MUST be relative...Hack!
-LOCAL_PARAM_DIR=../../openshift
+LOCAL_PARAM_DIR=${PROJECT_OS_DIR}
 
 # for build in "${${COMPONENT}-builds[@]}"; do
 for build in ${BUILDS}; do
-  echo -e "Processing build configuration; ${build}..."\\n
+  echo -e \\n"Processing build configuration; ${build}..."
 
   JSONFILE="${TEMPLATE_DIR}/${build}.json"
   JSONTMPFILE=$( basename ${build}_BuildConfig.json )
