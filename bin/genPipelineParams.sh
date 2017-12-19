@@ -26,22 +26,12 @@ exit
 # -----------------------------------------------------------------------------------------------------------------
 # Initialization:
 # -----------------------------------------------------------------------------------------------------------------
-if [ -f ${OCTOOLSBIN}/ocFunctions.inc ]; then
-  . ${OCTOOLSBIN}/ocFunctions.inc
-fi
-
-# Set project and local environment variables
-if [ -f settings.sh ]; then
-  echo -e \\n"Loading default project settings from settings.sh ..."\\n
-  . settings.sh
-fi
-
 while getopts c:flxh FLAG; do
   case $FLAG in
     c ) # Accept and ignore this parameter
       ;;
     f ) FORCE=1 ;;
-    l ) LOCAL=1 ;;
+    l ) export APPLY_LOCAL_SETTINGS=1 ;;
     x ) export DEBUG=1 ;;
     h ) usage ;;
     \?) #unrecognized option - show help
@@ -53,6 +43,16 @@ done
 
 # Shift the parameters in case there any more to be used
 shift $((OPTIND-1))
+
+# Set project and local environment variables
+if [ -f settings.sh ]; then
+  echo -e \\n"Loading default project settings from settings.sh ..."\\n
+  . settings.sh
+fi
+
+if [ -f ${OCTOOLSBIN}/ocFunctions.inc ]; then
+  . ${OCTOOLSBIN}/ocFunctions.inc
+fi
 
 # Debug mode
 if [ ! -z "${DEBUG}" ]; then
@@ -119,7 +119,7 @@ generatePipelineParameterFile (){
 }
 # =================================================================================================================
 
-if [ ! -z "${LOCAL}" ]; then
+if [ ! -z "${APPLY_LOCAL_SETTINGS}" ]; then
   COMMENTFILTER="sed s/^/#/"
   _outputDir=${PROJECT_OS_DIR}
 fi
@@ -144,7 +144,7 @@ popd >/dev/null
 echo "================================================================================================================="
 
 # Print informational messages ...
-if [ ! -z "${LOCAL}" ] && [ -z "${FORCENOTE}" ]; then
+if [ ! -z "${APPLY_LOCAL_SETTINGS}" ] && [ -z "${FORCENOTE}" ]; then
   echoWarning "\nLocal files generated with parmeters commented out. Edit the files to uncomment and set parameters as needed.\n"
 fi
 

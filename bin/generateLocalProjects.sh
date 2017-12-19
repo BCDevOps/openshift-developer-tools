@@ -26,16 +26,6 @@ EOF
 exit 1
 }
 
-# Set project and local environment variables
-if [ -f settings.sh ]; then
-  echo -e \\n"Loading default project settings from settings.sh ..."\\n
-  . settings.sh
-fi
-
-if [ -f ${OCTOOLSBIN}/ocFunctions.inc ]; then
-  . ${OCTOOLSBIN}/ocFunctions.inc
-fi
-
 while getopts xhp:D FLAG; do
   case $FLAG in
     D ) export DELETE_PROJECTS=1 ;;
@@ -51,6 +41,16 @@ done
 
 # Shift the parameters in case there any more to be used
 shift $((OPTIND-1))
+
+# Set project and local environment variables
+if [ -f settings.sh ]; then
+  echo -e \\n"Loading default project settings from settings.sh ..."\\n
+  . settings.sh
+fi
+
+if [ -f ${OCTOOLSBIN}/ocFunctions.inc ]; then
+  . ${OCTOOLSBIN}/ocFunctions.inc
+fi
 
 if [ ! -z "${DEBUG}" ]; then
   set -x

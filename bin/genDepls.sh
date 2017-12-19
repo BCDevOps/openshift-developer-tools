@@ -13,6 +13,7 @@ usage() {
     -h prints the usage for the script
     -e <Environment> the environment (dev/test/prod) into which you are deploying (default: ${DEPLOYMENT_ENV_NAME})
     -c <component> to generate parameters for templates of a specific component
+    -l apply local settings and parameters
     -k keep the json produced by processing the template
     -u update OpenShift deployment configs instead of creating the configs
     -x run the script in debug mode to see what's happening
@@ -24,23 +25,14 @@ EOF
 exit
 }
 
-# Set project and local environment variables
-if [ -f settings.sh ]; then
-  echo -e \\n"Loading default project settings from settings.sh ..."\\n
-  . settings.sh
-fi
-
-if [ -f ${OCTOOLSBIN}/ocFunctions.inc ]; then
-  . ${OCTOOLSBIN}/ocFunctions.inc
-fi
-
 # Process the command line arguments
 # In case you wanted to check what variables were passed
 # echo "flags = $*"
-while getopts c:e:ukxhg FLAG; do
+while getopts c:e:lukxhg FLAG; do
   case $FLAG in
     c ) export COMP=$OPTARG ;;
     e ) export DEPLOYMENT_ENV_NAME=$OPTARG ;;
+    l ) export APPLY_LOCAL_SETTINGS=1 ;;
     u ) export OC_ACTION=replace ;;
     k ) export KEEPJSON=1 ;;
     x ) export DEBUG=1 ;;
@@ -58,6 +50,16 @@ done
 # Shift the parameters in case there any more to be used
 shift $((OPTIND-1))
 # echo Remaining arguments: $@
+
+# Set project and local environment variables
+if [ -f settings.sh ]; then
+  echo -e \\n"Loading default project settings from settings.sh ..."\\n
+  . settings.sh
+fi
+
+if [ -f ${OCTOOLSBIN}/ocFunctions.inc ]; then
+  . ${OCTOOLSBIN}/ocFunctions.inc
+fi
 
 if [ ! -z "${DEBUG}" ]; then
   set -x
