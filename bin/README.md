@@ -220,33 +220,11 @@ In the current instance of the deployment, the routes created are explicitly def
 updateRoutes.sh
 ```
 
-
-*More documentation to come ...*
-
-
 # Scripts
 
-*ToDo: Include a short description of all of the scripts ...*
+Following is a list of the top level scripts.  There additional lower level scripts that are not listed here since they are wrapped into top level scripts.
 
-
-**ToDo: Update the following documentation ...**
-
-
-## ocFunctions.inc
-
-A set of common functions to include in your scripts.
-
-## createGlusterfsClusterApp.sh
-
-Create/re-create the Gluster file system resources on a project.
-
-## createLocalProject.sh
-
-Creates an project on a local OpenShift cluster.
-
-## deleteLocalProject.sh
-
-Deletes an project from a local OpenShift cluster.
+Use `-h` to get more detailed usage information on the scripts.
 
 ## dropAndRecreateDatabase.sh
 
@@ -256,15 +234,41 @@ Refer to the usage documentation contained in the script for details.  Run the s
 
 _This script could be further enhanced to utilize the environment variables within the running pod to determine various database parameters dynamically.  The process will require some fussing around with escaping quotes and such to get things just right._
 
-## getPodByName.sh
+## genBuilds.sh
 
-A utility script that returns the full name of a running instance of a pod, given the pod's name and optionally the pod index.
+Generate the build configurations for the project.
 
-Refer to the usage documentation contained in the script for details.  Run the script without parameters to see the documentation.
+## genDepls.sh
 
-## grantDeploymentPrivileges.sh
+Generate the deployment configurations for the project.
 
-Grants deployment configurations access to the images in the tools project.
+## generateLocalProjects.sh
+
+Generate a set of OpenShift projects in a local cluster.
+
+## genParams.sh
+
+Generate the parameter files for the OpenShift templates defined in a project.
+
+## initOSProjects.sh
+
+Initializes the permissions and storage services for the OpenShift projects.
+
+## oc-cluster-down.sh
+
+Shutdown your local OpenShift cluster.
+
+## oc-cluster-up.sh
+
+Start your local OpenShift cluster.
+
+## oc-pull-image.sh
+
+Pull an image from an OpenShift project into your local Docker registry.
+
+## oc-push-image.sh
+
+Push an image from your local Docker registry into an OpenShift project.
 
 ## runInContainer.sh
 
@@ -279,3 +283,7 @@ A helper script to scale a deployment to a particular number of pods.
 ## tagProjectImages.sh
 
 Tags the project's images, as defined in the project's settings.sh file.
+
+## updateRoutes.sh
+
+For use with local instances.  Updates the routes, as defined in the project's settings.sh file.
