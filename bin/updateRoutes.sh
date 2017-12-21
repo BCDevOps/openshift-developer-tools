@@ -1,5 +1,7 @@
 #!/bin/bash
 
+OCTOOLSBIN=$(dirname $0)
+
 usage() { #Usage function
   cat <<-EOF
   Delete and recreate with defaults the routes in an environment.
@@ -36,10 +38,8 @@ done
 shift $((OPTIND-1))
 # echo Remaining arguments: $@
 
-# Set project and local environment variables
-if [ -f settings.sh ]; then
-  echo -e \\n"Loading default project settings from settings.sh ..."\\n
-  . settings.sh
+if [ -f ${OCTOOLSBIN}/settings.sh ]; then
+  . ${OCTOOLSBIN}/settings.sh
 fi
 
 if [ ! -z "${DEBUG}" ]; then
