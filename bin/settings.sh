@@ -58,8 +58,8 @@ export PROJECT_OS_DIR=${PROJECT_OS_DIR:-.}
 
 export OC_ACTION=${OC_ACTION:-create}
 export DEV=${DEV:-dev}
-export TEST=${DEV:-test}
-export PROD=${DEV:-prod}
+export TEST=${TEST:-test}
+export PROD=${PROD:-prod}
 
 export TOOLS=${TOOLS:-${PROJECT_NAMESPACE}-tools}
 export DEPLOYMENT_ENV_NAME=${DEPLOYMENT_ENV_NAME:-${DEPLOYMENT_ENV_NAME:-${DEV}}}
