@@ -287,3 +287,7 @@ Tags the project's images, as defined in the project's settings.sh file.
 ## updateRoutes.sh
 
 For use with local instances.  Updates the routes, as defined in the project's settings.sh file.
+
+## exportTemplate.sh
+
+Helper script to export an OpenShift resource as a template.
