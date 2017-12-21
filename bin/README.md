@@ -1,6 +1,139 @@
 # OpenShift Scripts
 
-A set of helper scripts to help maintain the project.
+A set of scripts to help you configure and maintain your local and production OpenShift projects.
+
+## Environemnt Setup
+
+1. Clone this repository to your local machine.
+1. Update your path to include a reference to the `bin` directory
+
+Using GIT Bash on Windows as an example;
+1. Create a `.bashrc` file in your home directory (`C:\Users\<UserName/>`, for ewxample `C:\Users\Wade`).
+1. Add the line `PATH=${PATH}:/c/openshift-project-tools/bin`
+1. Restart GIT Bash.  _If you have not done this before, GIT will write out some warnings and create some files for you that fix the issues._
+
+All of the scripts will be avilable on the path and can be run from any directory.  This is imortant as many of the scripts expect to be run from the top level `./openshift` directory you will create in your project.
+
+## Project Structure
+
+To use these scripts your project structure should be organized in one of two ways; split out by component, or simplified.  The one you choose should be based on the complexity of your project and your personal development preferences.
+
+Regardless of which you choose, you will always have a top level `./openshift` directory in your project where you keep you're main project settings (`settings.sh`) file.
+
+### Component Project Structure
+
+[TheOrgBook](https://github.com/bcgov/TheOrgBook) and [Family-Protection-Order](https://github.com/bcgov/Family-Protection-Order) are examples of the Component Project Structure.
+
+In general terms the structure looks like this, where the code and the openshift templates for the components are separated out into logical bits.
+
+RootProjectDir
+- openshift
+- component1
+  - openshift
+    - templates
+- component2
+  - openshift
+    - templates
+
+### Simple Project Structure
+
+[permitify](https://github.com/bcgov/permitify) is an example of the Simple Project Structure.
+
+In general terms the structure looks like this, where all of the openshift templates for the components are grouped together in a central location.
+
+RootProjectDir
+- openshift
+  - templates
+
+## Settings.sh
+
+You will need to include a `settings.sh` file in your top level `./openshift` directory that contains your project specific settings.
+
+At a minimun this file should contain definitions for your `PROJECT_NAMESPACE`, `GIT_URI`, and `GIT_REF` all of which should be setup to be overridable.
+
+**For Example:**
+```
+export PROJECT_NAMESPACE=${PROJECT_NAMESPACE:-devex-von-permitify}
+export GIT_URI=${GIT_URI:-"https://github.com/bcgov/permitify.git"}
+export GIT_REF=${GIT_REF:-"master"}
+```
+
+**Full Simple Project Structure Example:**
+```
+export PROJECT_NAMESPACE=${PROJECT_NAMESPACE:-devex-von-permitify}
+export GIT_URI=${GIT_URI:-"https://github.com/bcgov/permitify.git"}
+export GIT_REF=${GIT_REF:-"master"}
+
+# The project components
+# - They are all contained under the main OpenShift folder.
+export -a components=(".")
+
+# The builds to be triggered after buildconfigs created (not auto-triggered)
+export -a builds=()
+
+# The images to be tagged after build
+export -a images=("permitify")
+
+# The routes for the project
+export -a routes=("bc-registries" "worksafe-bc")
+```
+
+**Full Component Project Structure Example:**
+```
+export PROJECT_NAMESPACE=${PROJECT_NAMESPACE:-devex-von}
+export GIT_URI=${GIT_URI:-"https://github.com/bcgov/TheOrgBook.git"}
+export GIT_REF=${GIT_REF:-"master"}
+
+# The templates that should not have their GIT referances(uri and ref) over-ridden
+# Templates NOT in this list will have they GIT referances over-ridden
+# with the values of GIT_URI and GIT_REF
+export -a skip_git_overrides=("schema-spy-build.json" "solr-base-build.json")
+
+# The project components
+export -a components=("tob-db" "tob-solr" "tob-api" "tob-web")
+
+# The builds to be triggered after buildconfigs created (not auto-triggered)
+export -a builds=("nginx-runtime" "angular-builder")
+
+# The images to be tagged after build
+export -a images=("angular-on-nginx" "django" "solr" "schema-spy")
+
+# The routes for the project
+export -a routes=("angular-on-nginx" "django" "solr" "schema-spy")
+```
+
+## Settings.local.sh
+
+You can also have a `settings.local.sh` file in your top level `./openshift` directory that contains any overrides necessary for deploying your project into a local OpenShift environment.
+
+Typically this will simply contain overrides for the `GIT_URI` and `GIT_REF`, for example:
+```
+export GIT_URI="https://github.com/WadeBarnes/permitify.git"
+export GIT_REF="openshift"
+```
+
+These orverrides come into play when you are generating local param files, and deploying into a local OpenShift environment.
+
+## Using the Scripts
+
+When using the scripts run them from the command line in the top level `./openshift` directory of your project.
+
+You will need to install the OC CLI.  Get a recent stable (or the latest) [Openshift Command Line tool](https://github.com/openshift/origin/releases) (oc) and install it by extracting the "oc" executable and placing it somewhere on your path.  You can also install it with several different package managers.
+
+### Starting/Stopping a Local OpenShift Cluster
+
+Use the `oc-cluster-up.sh` script to start a local OpenShift cluster, and `oc-cluster-down.sh` to stop the cluster.
+
+*More documentation to come ...*
+
+
+# Scripts
+
+*ToDo: Include a short description of all of the scripts ...*
+
+
+**ToDo: Update the following documentation ...**
+
 
 ## ocFunctions.inc
 
@@ -49,17 +182,3 @@ A helper scrript to scale a deployment to a particular number of pods.
 ## tagProjectImages.sh
 
 Tags the project's images, as defined in the project's settings.sh file.
-
-## ToDo:
-
-Generate additional scripts that automate the process reloading the data for an application.  Such a process is documented here; [Detailed Steps to reset the Database for an environment](https://github.com/bcgov/hets/tree/master/APISpec/TestData#detailed-steps-to-reset-the-database-for-an-environment).
-
-Needed are:
-
-- A script to find a replication controller by name, similar to `getPodByName.sh`.
-  - The following oc command gets us part way there;
-    - `oc get rc -l "openshift.io/deployment-config.name=schema-spy" --template "{{ with index .items (len .items) }}{{ .metadata.name }}{{ end }}"`
-  - It actually points one index past the active replication controller.  Unfortunately I have not found a way to do math in the template to subtract 1 from the index to get the active controller.
-- A script to scale the replication controller(s) for the main application (the one controlling the database migrations) up and down.
-- A wrapper script to then combine the steps together; 1. Scale Down, 2. Recreate Database. 3. Scale Up.
-- A top level script to combine the above operations with the data loading process (which is controlled by another set of existing scripts).

@@ -21,3 +21,5 @@ Jenkins pipeline related tools, utilities, and examples.
 ## bin
 
 A set of scripts for managing and maintaining OpenShift projects and configurations.
+
+Refer to the [OpenShift Scripts](./bin/README.md) for details on how to use the scripts.
