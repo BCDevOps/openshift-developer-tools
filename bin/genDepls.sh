@@ -51,10 +51,8 @@ done
 shift $((OPTIND-1))
 # echo Remaining arguments: $@
 
-# Set project and local environment variables
-if [ -f settings.sh ]; then
-  echo -e \\n"Loading default project settings from settings.sh ..."\\n
-  . settings.sh
+if [ -f ${OCTOOLSBIN}/settings.sh ]; then
+  . ${OCTOOLSBIN}/settings.sh
 fi
 
 if [ -f ${OCTOOLSBIN}/ocFunctions.inc ]; then
