@@ -51,6 +51,8 @@ You will need to include a `settings.sh` file in your top level `./openshift` di
 
 At a minimum this file should contain definitions for your `PROJECT_NAMESPACE`, `GIT_URI`, and `GIT_REF` all of which should be setup to be overridable.
 
+*When using the Component Project Structure you will also need to override `PROJECT_OS_DIR`.*  Refer to the Full Component Project Structure Example for details.
+
 **For Example:**
 ```
 export PROJECT_NAMESPACE=${PROJECT_NAMESPACE:-devex-von-permitify}
@@ -81,6 +83,8 @@ export -a routes=("bc-registries" "worksafe-bc")
 **Full Component Project Structure Example:**
 ```
 export PROJECT_NAMESPACE=${PROJECT_NAMESPACE:-devex-von}
+export PROJECT_OS_DIR=${PROJECT_OS_DIR:-../../openshift}
+
 export GIT_URI=${GIT_URI:-"https://github.com/bcgov/TheOrgBook.git"}
 export GIT_REF=${GIT_REF:-"master"}
 
