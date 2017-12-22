@@ -50,7 +50,7 @@ fi
 # Fix routes
 echo -e "Update routes to default in the project: ${PROJECT_NAMESPACE}-${DEPLOYMENT_ENV_NAME}"
 oc project ${PROJECT_NAMESPACE}-${DEPLOYMENT_ENV_NAME}
-for route in "${routes[@]}"; do
+for route in ${routes}; do
   oc delete route ${route}
   oc create route edge --service=${route}
   sleep 3 # Allow the creation of the route to complete

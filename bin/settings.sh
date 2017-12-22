@@ -91,22 +91,22 @@ export PROJECT_NAMESPACE=${PROJECT_NAMESPACE:-""}
 # The templates that should not have their GIT referances(uri and ref) over-ridden
 # Templates NOT in this list will have they GIT referances over-ridden
 # with the values of GIT_URI and GIT_REF
-export -a skip_git_overrides=${skip_git_overrides:-()}
+export skip_git_overrides=${skip_git_overrides:-""}
 export GIT_URI=${GIT_URI:-""}
 export GIT_REF=${GIT_REF:-"master"}
 
 # The project components
 # - defaults to the support the Simple Project Structure
-export -a components=${components:-(".")} 
+export components=${components:-"."}
 
 # The builds to be triggered after buildconfigs created (not auto-triggered)
-export -a builds=${builds:-()}
+export builds=${builds:-""}
 
 # The images to be tagged after build
-export -a images=${images:-()}
+export images=${images:-""}
 
 # The routes for the project
-export -a routes=${routes:-()}
+export routes=${routes:-""}
 # ===========================================================================================================
 
 # ===========================================================================================================

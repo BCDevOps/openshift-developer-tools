@@ -63,7 +63,7 @@ if [ ! -z "${DEBUG}" ]; then
 fi
 # ==============================================================================
 
-for component in "${components[@]}"; do
+for component in ${components}; do
   if [ ! -z "${COMP}" ] && [ ! "${COMP}" = ${component} ]; then
     # Only process named component if -c option specified
     continue
@@ -94,7 +94,7 @@ if [ -z ${GEN_ONLY} ]; then
 
   oc project ${TOOLS} >/dev/null
   exitOnError
-  for build in "${builds[@]}"; do
+  for build in ${builds}; do
     echo -e \\n"Manually triggering build of ${build}..."\\n
     oc start-build ${build}
       exitOnError

@@ -58,7 +58,7 @@ fi
 # ==============================================================================
 
 echo -e \\n"Tagging images for dev environment deployment ..."\\n
-for image in "${images[@]}"; do
+for image in ${images}; do
   oc tag ${image}:latest ${image}:dev -n ${TOOLS}
   exitOnError
 done

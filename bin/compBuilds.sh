@@ -29,7 +29,6 @@ exitOnError
 # Local params file path MUST be relative...Hack!
 LOCAL_PARAM_DIR=${PROJECT_OS_DIR}
 
-# for build in "${${COMPONENT}-builds[@]}"; do
 for build in ${BUILDS}; do
   echo -e \\n"Processing build configuration; ${build}..."
 

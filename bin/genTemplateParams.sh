@@ -254,7 +254,7 @@ generateParameterFile (){
 }
 # =================================================================================================================
 
-for component in ${components[@]}; do
+for component in ${components}; do
   if [ ! -z "${COMP}" ] && [ ! "${COMP}" = ${component} ]; then
     # Only process named component if -c option specified
     continue
