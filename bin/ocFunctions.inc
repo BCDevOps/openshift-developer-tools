@@ -37,7 +37,7 @@ isLocalCluster (){
 
 projectExists (){
   project=$1
-  cmd="oc projects | grep '\s"${project}"$'"
+  cmd="oc projects | grep '"${project}"'"
   rtnVal=$(eval ${cmd})
   if [ -z "${rtnVal}" ]; then
     # Project does not exist ..."
