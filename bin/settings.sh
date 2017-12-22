@@ -40,12 +40,14 @@ if [ ! -z "${APPLY_LOCAL_SETTINGS}" ] && [ -f ${_localSettingsFile} ]; then
   echo -e "Loading project level local overrides from ${PWD}/${_localSettingsFileName} ..."
   . ${_localSettingsFile}
 elif [ ! -z "${APPLY_LOCAL_SETTINGS}" ] && [ ! -f ${_localSettingsFile} ]; then
-  echoWarning "=================================================================================================="
-  echoWarning "Warning:"
-  echoWarning "--------------------------------------------------------------------------------------------------"
-  echoWarning "You've specified you want to apply local settings,"
-  echoWarning "but no project level local override settings file (${_localSettingsFileName}) was found in '${PWD}'."
-  echoWarning "=================================================================================================="
+  echo "=================================================================================================="
+  echo "Information:"
+  echo "--------------------------------------------------------------------------------------------------"
+  echo "You've specified you want to apply local settings,"
+  echo "but no project level local override settings file"
+  echo "(${_localSettingsFileName}) was found in '${PWD}'."
+  echo "This is a great way to apply overrides when you are generating local parameter files."
+  echo "=================================================================================================="
 fi
 # ===========================================================================================================
 
