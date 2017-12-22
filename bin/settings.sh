@@ -1,6 +1,7 @@
 # git bash hack on windows - deals with pathname conversions from dos to unix-style
 export MSYS_NO_PATHCONV=1
 
+export _componentSettingsFileName=component.settings.sh
 _settingsFileName=settings.sh
 _localSettingsFileName=settings.local.sh
 _settingsFile=./${_settingsFileName}

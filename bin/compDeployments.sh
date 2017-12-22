@@ -8,6 +8,12 @@ if [ -z "${_component_name}" ]; then
   exit 1
 fi
 
+# Components can specif
+if [ -f ${_componentSettingsFileName} ]; then
+  echo -e "Loading component level settings from ${PWD}/${_componentSettingsFileName} ..."
+  . ${_componentSettingsFileName}
+fi
+
 if [ -f ${OCTOOLSBIN}/ocFunctions.inc ]; then
   . ${OCTOOLSBIN}/ocFunctions.inc
 fi
