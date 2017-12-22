@@ -68,42 +68,42 @@ export GIT_REF=${GIT_REF:-"master"}
 
 # The project components
 # - They are all contained under the main OpenShift folder.
-export -a components=(".")
+export components="."
 
 # The builds to be triggered after buildconfigs created (not auto-triggered)
-export -a builds=()
+export builds=""
 
 # The images to be tagged after build
-export -a images=("permitify")
+export images="permitify"
 
 # The routes for the project
-export -a routes=("bc-registries" "worksafe-bc")
+export routes="bc-registries worksafe-bc"
 ```
 
 **Full Component Project Structure Example:**
 ```
-export PROJECT_NAMESPACE=${PROJECT_NAMESPACE:-devex-von}
+export PROJECT_NAMESPACE="devex-von"
 export PROJECT_OS_DIR=${PROJECT_OS_DIR:-../../openshift}
 
-export GIT_URI=${GIT_URI:-"https://github.com/bcgov/TheOrgBook.git"}
-export GIT_REF=${GIT_REF:-"master"}
+export GIT_URI="https://github.com/bcgov/TheOrgBook.git"
+export GIT_REF="master"
 
-# The templates that should not have their GIT references (uri and ref) over-ridden
-# Templates NOT in this list will have they GIT references over-ridden
+# The templates that should not have their GIT referances(uri and ref) over-ridden
+# Templates NOT in this list will have they GIT referances over-ridden
 # with the values of GIT_URI and GIT_REF
-export -a skip_git_overrides=("schema-spy-build.json" "solr-base-build.json")
+export -a skip_git_overrides="schema-spy-build.json solr-base-build.json"
 
 # The project components
-export -a components=("tob-db" "tob-solr" "tob-api" "tob-web")
+export components="tob-db tob-solr tob-api tob-web"
 
 # The builds to be triggered after buildconfigs created (not auto-triggered)
-export -a builds=("nginx-runtime" "angular-builder")
+export builds="nginx-runtime angular-builder"
 
 # The images to be tagged after build
-export -a images=("angular-on-nginx" "django" "solr" "schema-spy")
+export images="angular-on-nginx django solr schema-spy"
 
 # The routes for the project
-export -a routes=("angular-on-nginx" "django" "solr" "schema-spy")
+export routes="angular-on-nginx django solr schema-spy"
 ```
 
 ## Settings.local.sh
