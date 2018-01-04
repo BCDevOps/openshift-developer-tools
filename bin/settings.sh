@@ -14,7 +14,7 @@ echoWarning (){
   echo -e "${_yellow}${_msg}${_nc}"
 }
 
-echo -e "Loading settings ..."
+echo -e "\nLoading settings ..."
 
 # ===========================================================================================================
 # Load the project level settings file ...
