@@ -8,7 +8,10 @@ if [ -z "${_component_name}" ]; then
   exit 1
 fi
 
-# Components can specif
+# Components can specify settings overrides ...
+# TODO:
+# Refactor how the component level overrides are loaded.
+# Load them like the Parameter overrides loaded from the PARAM_OVERRIDE_SCRIPT
 if [ -f ${_componentSettingsFileName} ]; then
   echo -e "Loading component level settings from ${PWD}/${_componentSettingsFileName} ..."
   . ${_componentSettingsFileName}
@@ -37,12 +40,14 @@ exitOnError
 LOCAL_PARAM_DIR=${PROJECT_OS_DIR}
 
 for deploy in ${DEPLOYS}; do
-  echo -e \\n"Processing deployment configuration; ${deploy} ..."\\n
+  echo -e \\n"Processing deployment configuration; ${deploy} ..."
 
   JSONFILE="${TEMPLATE_DIR}/${deploy}.json"
   JSONTMPFILE=$( basename ${deploy}_DeploymentConfig.json )
   PARAMFILE=$( basename ${deploy}.param )
   ENVPARAM=$( basename ${deploy}.${DEPLOYMENT_ENV_NAME}.param )
+  PARAM_OVERRIDE_SCRIPT=$( basename ${deploy}.overrides.sh ) 
+  
   if [ ! -z "${APPLY_LOCAL_SETTINGS}" ]; then
     LOCALPARAM=${LOCAL_PARAM_DIR}/$( basename ${deploy}.local.param )
   fi
@@ -64,12 +69,28 @@ for deploy in ${DEPLOYS}; do
   else
     LOCALPARAM=""
   fi
+  
+  # Parameter overrides can be defined for individual deployment templates at the root openshift folder level ...
+  if [ -f ${PARAM_OVERRIDE_SCRIPT} ]; then
+    if [ -z "${SPECIALDEPLOYPARM}" ]; then
+      echo -e "Loading parameter overrides for ${deploy} ..."
+      SPECIALDEPLOYPARM=$(${PWD}/${PARAM_OVERRIDE_SCRIPT})
+    else
+      echo -e "Adding parameter overrides for ${deploy} ..."
+      SPECIALDEPLOYPARM="${SPECIALDEPLOYPARM} $(${PWD}/${PARAM_OVERRIDE_SCRIPT})"
+    fi
+  fi
 
   oc process --filename=${JSONFILE} ${SPECIALDEPLOYPARM} ${LOCALPARAM} ${ENVPARAM} ${PARAMFILE} > ${JSONTMPFILE}
   exitOnError
+  
+  if [ ! -z "${SPECIALDEPLOYPARM}" ]; then
+    unset SPECIALDEPLOYPARM
+  fi
+     
   if [ -z ${GEN_ONLY} ]; then
     oc ${OC_ACTION} -f ${JSONTMPFILE}
-  exitOnError
+    exitOnError
   fi
 
   # Delete the tempfile if the keep command line option was not specified
