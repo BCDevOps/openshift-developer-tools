@@ -122,11 +122,13 @@ getParameterFileCommentFilter () {
       _commentFilter="${_commentFilter}/MEMORY_LIMIT/s~^#~~;"      
       _commentFilter="${_commentFilter}/MEMORY_REQUEST/s~^#~~;"      
       _commentFilter="${_commentFilter}/CPU_LIMIT/s~^#~~;"      
-      _commentFilter="${_commentFilter}/CPU_REQUEST/s~^#~~;"      
+      _commentFilter="${_commentFilter}/CPU_REQUEST/s~^#~~;"
+
+      _commentFilter="sed ${_commentFilter}"
       ;;
   esac
 
-  echo "sed ${_commentFilter}"  
+  echo "${_commentFilter}"  
 }
 
 getParameterFileOutputPrefix () {
