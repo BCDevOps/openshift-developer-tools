@@ -59,6 +59,16 @@ fi
 # -----------------------------------------------------------------------------------------------------------------
 # Function(s):
 # -----------------------------------------------------------------------------------------------------------------
+getLocalPipelineCommentFilter () {
+  _commentFilter="s~^~#~;"
+
+  # Uncomment the main local settings ...
+  _commentFilter="${_commentFilter}/SOURCE_REPOSITORY_URL/s~^#~~;"      
+  _commentFilter="${_commentFilter}/SOURCE_REPOSITORY_REF/s~^#~~;"      
+  
+  echo "sed ${_commentFilter}"  
+}
+
 generatePipelineParameterFilter (){
   _jenkinsFile=${1}
   if [ -z "${_jenkinsFile}" ]; then
@@ -118,7 +128,7 @@ generatePipelineParameterFile (){
 # =================================================================================================================
 
 if [ ! -z "${APPLY_LOCAL_SETTINGS}" ]; then
-  COMMENTFILTER="sed s/^/#/"
+  COMMENTFILTER=$(getLocalPipelineCommentFilter)
   _outputDir=$(PWD -P)
 fi
 
