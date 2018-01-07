@@ -108,14 +108,25 @@ getParameterFileCommentFilter () {
     exit 1
   fi
 
-  _commentFilter="sed s/^/#/"
+  _commentFilter="s~^~#~;"
+  
   case ${_type} in
     r ) # Regular file
       _commentFilter=cat
       ;;
+    l ) # Local file
+      # Uncomment the main local settings ...
+      _commentFilter="${_commentFilter}/GIT_REPO_URL/s~^#~~;"      
+      _commentFilter="${_commentFilter}/GIT_REF/s~^#~~;"      
+      
+      _commentFilter="${_commentFilter}/MEMORY_LIMIT/s~^#~~;"      
+      _commentFilter="${_commentFilter}/MEMORY_REQUEST/s~^#~~;"      
+      _commentFilter="${_commentFilter}/CPU_LIMIT/s~^#~~;"      
+      _commentFilter="${_commentFilter}/CPU_REQUEST/s~^#~~;"      
+      ;;
   esac
 
-  echo ${_commentFilter}
+  echo "sed ${_commentFilter}"  
 }
 
 getParameterFileOutputPrefix () {
@@ -197,7 +208,7 @@ generateParameterFilter (){
       _parameterFilters="${_parameterFilters}s~\(^MEMORY_LIMIT=\).*$~\10Mi~;"
       _parameterFilters="${_parameterFilters}s~\(^MEMORY_REQUEST=\).*$~\10Mi~;"
       _parameterFilters="${_parameterFilters}s~\(^CPU_LIMIT=\).*$~\10~;"
-      _parameterFilters="${_parameterFilters}s~\(^CPU_REQUEST=\).*$~\10~;"
+      _parameterFilters="${_parameterFilters}s~\(^CPU_REQUEST=\).*$~\10~;"      
       ;;
   esac
 

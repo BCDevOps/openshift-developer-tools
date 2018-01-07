@@ -82,5 +82,5 @@ echo -e "\t${COMMAND:-echo}"
 echo
 
 # Run command in a container of the specified pod:
-oc exec "$POD_INSTANCE_NAME" -- bash -c "${COMMAND:-echo}"
+oc exec "$POD_INSTANCE_NAME" -- bash -c "${COMMAND:-echo Hello}"
 exitOnError
