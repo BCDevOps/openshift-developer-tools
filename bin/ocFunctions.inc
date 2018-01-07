@@ -91,7 +91,11 @@ appendParametersToFile (){
   _gitUrlFilter=cat
   _gitRefFilter=cat
   _templateName=$(basename ${_template})
-  if ! contains "${_templateName}" "${skip_git_overrides[@]}"; then
+  
+  OIFS=$IFS
+  IFS=" "
+  _skip_git_overrides_array=(${skip_git_overrides}) 
+  if ! contains "${_templateName}" "${_skip_git_overrides_array[@]}"; then
     # Override the GIT URI if it is defined ...
     if [ ! -z "${GIT_URI}" ]; then
       _gitUrlFilter="sed s~\(^\(GIT_REPO_URL\|SOURCE_REPOSITORY_URL\)=\).*$~\1${GIT_URI}~"
@@ -103,6 +107,7 @@ appendParametersToFile (){
       _gitRefFilter="sed s~\(^\(GIT_REF\|SOURCE_REPOSITORY_REF\)=\).*$~\1${GIT_REF}~"
     fi
   fi
+  IFS=$OIFS  
 
   # Fancy sed handling below to convert parameters output to param file format
   # - Delete the first line of the oc process output
