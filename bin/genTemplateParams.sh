@@ -126,6 +126,9 @@ getParameterFileCommentFilter () {
 
       _commentFilter="sed ${_commentFilter}"
       ;;
+    *) # unrecognized option
+      _commentFilter="sed ${_commentFilter}"
+      ;;      
   esac
 
   echo "${_commentFilter}"  
