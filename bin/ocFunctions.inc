@@ -1,3 +1,16 @@
+getRelativeOutputDir () {
+  # Assumes you are starting in the projects root openshift directory ...
+  _openshiftDir=$(PWD -P)
+  
+  # Switch to the project directory, which should be up one directory level ...
+  pushd ${PROJECT_DIR} >/dev/null
+  _projectDir=$(PWD -P)
+  popd >/dev/null
+  
+  _relativeOutputDir=$(echo ${_openshiftDir} | sed "s~${_projectDir}~.~")
+  echo ${_relativeOutputDir}
+}
+
 echoWarning (){
   _msg=${1}
   _yellow='\033[1;33m'
@@ -128,6 +141,41 @@ appendParametersToFile (){
     sed 's/^#/# /' \
     >> ${_outputPath}
   exitOnError
+}
+
+getSecretTemplates () {
+  echo $(find . -name "*secret.json" -exec grep -l "Secret" '{}' \;)
+}
+
+getFilenameWithoutExt()
+{
+  _path=${1}
+  if [ -z "${_path}" ]; then
+    echo -e \\n"getFilenameWithoutExt; Missing parameter!"\\n
+    exit 1
+  fi
+  
+  _filename=$(basename ${_path})
+  _name=${_filename%.*}
+  echo ${_name}
+}
+
+getSecretFiles () {
+  _secretTemplate=${1}
+  if [ -z "${_secretTemplate}" ]; then
+    echo -e \\n"getSecretFiles; Missing parameter!"\\n
+    exit 1
+  fi
+  
+  # The related files should be in a 'secret' folder under the openshift directory with the same name as the temaple.
+  # For example:
+  # Template = ./openshift/templates/server/server-secret.json
+  # Secrets = ./openshift/secrets/server-secret/*
+  
+  # Find all of the secrets associated with the template ...
+  _name=$(getFilenameWithoutExt ${_secretTemplate})
+  _searchPattern="*/secrets/${_name}/*"
+  echo $(find . -path "${_searchPattern}")
 }
 
 getJenkinsFiles () {
