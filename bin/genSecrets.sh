@@ -7,6 +7,9 @@ OCTOOLSBIN=$(dirname $0)
 usage() {
   cat <<-EOF
   A tool to create or update OpenShift secrets.
+  
+  This process is a bit more flexible than using the 'oc secrets' command directly,
+  in that it allows you to update existing secrets, and create more customized templates.
     
   The secret templates should be located with their related component template(s).
   The name of the template MUST be in the form <TemplateName/>-secret.json
