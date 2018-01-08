@@ -284,11 +284,11 @@ for component in ${components}; do
 
   # Get list of JSON files - they could be in multiple directories below
   pushd ${TEMPLATE_DIR} >/dev/null
-  JSONFILES=$(getJsonFiles)
+  _configTemplates=$(getConfigTemplates)
   popd >/dev/null
 
   # Iterate through each file and generate the params files
-  for file in ${JSONFILES}; do
+  for file in ${_configTemplates}; do
     # Don't generate dev/test/prod param files for Build templates
     TEMPLATE=${TEMPLATE_DIR}/${file}.json
     if isBuildConfig ${TEMPLATE}; then
