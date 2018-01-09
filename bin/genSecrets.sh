@@ -41,6 +41,7 @@ usage() {
   OPTIONS:
   ========
     -h prints the usage for the script
+    -e <Environment> the environment (dev/test/prod) into which you are deploying (default: ${DEPLOYMENT_ENV_NAME})
     -u update OpenShift build configs vs. creating the configs
     -k keep the json produced by processing the template
     -x run the script in debug mode to see what's happening
@@ -54,8 +55,9 @@ exit 1
 # -----------------------------------------------------------------------------------------------------------------
 # Initialization:
 # -----------------------------------------------------------------------------------------------------------------
-while getopts ukxhg FLAG; do
+while getopts e:ukxhg FLAG; do
   case $FLAG in
+    e ) export DEPLOYMENT_ENV_NAME=$OPTARG ;;
     u ) export OC_ACTION=replace ;;
     k ) export KEEPJSON=1 ;;
     x ) export DEBUG=1 ;;
@@ -201,6 +203,12 @@ processSecret () {
 # ==============================================================================
 
 _OUTPUT_DIR=$(getRelativeOutputDir)
+
+echo -e \\n"Deploying secret(s) into the ${DEPLOYMENT_ENV_NAME} (${PROJECT_NAMESPACE}-${DEPLOYMENT_ENV_NAME}) environment ..."\\n
+
+# Switch to the selected project ...
+oc project ${PROJECT_NAMESPACE}-${DEPLOYMENT_ENV_NAME} >/dev/null
+exitOnError
 
 # Get list of all of the secret templates in the project ...
 pushd ${PROJECT_DIR} >/dev/null
