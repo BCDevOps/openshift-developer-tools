@@ -129,7 +129,7 @@ generatePipelineParameterFile (){
 
 if [ ! -z "${APPLY_LOCAL_SETTINGS}" ]; then
   COMMENTFILTER=$(getLocalPipelineCommentFilter)
-  _outputDir=$(PWD -P)
+  _outputDir=$(pwd -P)
 fi
 
 echo

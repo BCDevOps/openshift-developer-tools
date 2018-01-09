@@ -1,10 +1,10 @@
 getRelativeOutputDir () {
   # Assumes you are starting in the projects root openshift directory ...
-  _openshiftDir=$(PWD -P)
+  _openshiftDir=$(pwd -P)
   
   # Switch to the project directory, which should be up one directory level ...
   pushd ${PROJECT_DIR} >/dev/null
-  _projectDir=$(PWD -P)
+  _projectDir=$(pwd -P)
   popd >/dev/null
   
   _relativeOutputDir=$(echo ${_openshiftDir} | sed "s~${_projectDir}~.~")
