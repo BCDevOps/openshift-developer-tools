@@ -183,7 +183,7 @@ getJenkinsFiles () {
 }
 
 getConfigTemplates () {
- echo $(find . -name "*json" -exec grep -l "DeploymentConfig\|BuildConfig" '{}' \; | sed "s/.json//" | xargs | sed "s/\.\///g")
+ echo $(find . -name "*json" -exec grep -l "DeploymentConfig\|BuildConfig\|Route" '{}' \; | sed "s/.json//" | xargs | sed "s/\.\///g")
 }
 
 getComponentNameFromDir () {
