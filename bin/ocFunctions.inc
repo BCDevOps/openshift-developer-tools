@@ -183,7 +183,7 @@ getJenkinsFiles () {
 }
 
 getConfigTemplates () {
- echo $(find . -name "*json" -exec grep -l "DeploymentConfig\|BuildConfig\|Route" '{}' \; | sed "s/.json//" | xargs | sed "s/\.\///g")
+ echo $(find . -name "*json" -exec grep -l "DeploymentConfig\|BuildConfig\|Route\|\"ImageStream\"" '{}' \; | sed "s/.json//" | xargs | sed "s/\.\///g")
 }
 
 getComponentNameFromDir () {
@@ -236,7 +236,7 @@ isBuildConfig() {
     exit 1
   fi
 
-  _isBuildConfig=$( grep -l BuildConfig ${_template} )
+  _isBuildConfig=$( grep -l "BuildConfig\|\"ImageStream\"" ${_template} )
   if [ -z "${_isBuildConfig}" ]; then
     return 1
   else
