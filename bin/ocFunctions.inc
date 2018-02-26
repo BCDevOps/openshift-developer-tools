@@ -131,7 +131,8 @@ appendParametersToFile (){
 
   # 1. Remove the headers (the first line) from the file.
   # 2. Place 'XXXX' in front of the start of the value column
-  # 3. Replace ALL of the text between the Key and the Value with '='.  Having the 'XXXX' helps with this.
+  # 3. Starting with the first instance of whitespace (RegEx, `\s`), replace ALL of the text between the Key and the Value with '='.
+  #    Having the 'XXXX' helps us set the bounds of the replacement.
   # 4. + Apply additional filters to the parameters
   oc process --parameters --filename=${_template} | \
     sed '1d' | \
