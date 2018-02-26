@@ -7,13 +7,13 @@ OCTOOLSBIN=$(dirname $0)
 # -----------------------------------------------------------------------------------------------------------------
 usage() {
   cat <<-EOF
-  A helper script to pull images from an OpenShift docker registry.
+  A helper script to push images to an OpenShift docker registry.
 
   Usage: ${0} [ -h -x -r <OpenShiftRegistryAddress>] -i <ImageName> -n <OpenShiftProjectNamespace> ]
 
   OPTIONS:
   ========
-    -i The name of the image to pull.
+    -i The name of the image to push.
     -n The namespace of the OpenShift project.
        For example devex-von-tools
     -r Optional.  The address of the OpenShift docker registry,

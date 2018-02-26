@@ -4,6 +4,11 @@
 # Script for setting up an OpenShift cluter in Docker for Windows
 #
 # * Requires the OpenShift Origin CLI
+#
+# todo:
+# Path based on platform;
+# Windows; /var/lib/origin/data
+# MAC; /private/var/lib/origin/data
 # ------------------------------------------------------------------------------
 #
 # Usage:
