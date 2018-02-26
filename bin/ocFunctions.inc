@@ -128,10 +128,15 @@ appendParametersToFile (){
   # - Remove all whitespace before the XXXX and change XXXX to =
   # - Use _commentFilter to add (or not) a "#" in front of each line; "#" comments it out the line
   #  - i.e. set _commentFilter="sed s/^/#/" to comment out the line
+
+  # 1. Remove the headers (the first line) from the file.
+  # 2. Place 'XXXX' in front of the start of the value column
+  # 3. Replace ALL of the text between the Key and the Value with '='.  Having the 'XXXX' helps with this.
+  # 4. + Apply additional filters to the parameters
   oc process --parameters --filename=${_template} | \
-    sed "1d" | \
-    sed 's/\([^ ]*$\)/XXXX\1/' |  \
-    sed 's/\s.*XXXX/=/' | \
+    sed '1d' | \
+    sed 's~\([^ ]*$\)~XXXX\1~' | \
+    sed 's~\s.*XXXX~=~' | \
     sed 's~\(^GITHUB_WEBHOOK_SECRET=.*$\)~#\1~' | \
     sed 's~\(^DJANGO_SECRET_KEY=.*$\)~#\1~' | \
     ${_gitUrlFilter} | \
