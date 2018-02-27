@@ -38,7 +38,7 @@ exitOnError () {
 }
 
 isLocalCluster (){
-  rtnVal=$(oc whoami -c |  grep '/127-0\|/10-0')
+  rtnVal=$(oc whoami -c |  grep '/127-0\|/10-0\|/192-168')
   if [ -z "$rtnVal" ]; then
     # Not a local cluster ..."
     return 1
