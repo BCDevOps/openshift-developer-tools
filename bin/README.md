@@ -25,6 +25,10 @@ Using [Homebrew](https://brew.sh):
 brew install gnu-sed --with-default-names
 ```
 
+Also make sure `usr/local/bin` is at a higher priority on your **PATH** than `usr/bin`.  This will ensure that packages installed by Homebrew override system binaries; in this case `sed`.
+
+`brew doctor` can help diagnose such issues.
+
 ## Project Structure
 
 To use these scripts your project structure should be organized in one of two ways; split out by component, or simplified.  The one you choose should be based on the complexity of your project and your personal development preferences.
