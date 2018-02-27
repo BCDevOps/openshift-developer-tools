@@ -8,11 +8,22 @@ A set of scripts to help you configure and maintain your local and production Op
 1. Update your path to include a reference to the `bin` directory
 
 Using GIT Bash on Windows as an example;
-1. Create a `.bashrc` file in your home directory (`C:\Users\<UserName/>`, for ewxample `C:\Users\Wade`).
+1. Create a `.bashrc` file in your home directory (`C:\Users\<UserName/>`, for example `C:\Users\Wade`).
 1. Add the line `PATH=${PATH}:/c/openshift-project-tools/bin`
 1. Restart GIT Bash.  _If you have not done this before, GIT will write out some warnings and create some files for you that fix the issues._
 
 All of the scripts will be available on the path and can be run from any directory.  This is important as many of the scripts expect to be run from the top level `./openshift` directory you will create in your project.
+
+### MAC Setup
+
+These scripts use `sed` and regular expression processing.  The default version of `sed` on MAC does support some of the processing.  Details can be found here; [Differences between sed on Mac OSX and other "standard" sed?](https://unix.stackexchange.com/questions/13711/differences-between-sed-on-mac-osx-and-other-standard-sed)
+
+Please install `gnu-sed`.
+
+Using [Homebrew](https://brew.sh):
+```
+brew install gnu-sed --with-default-names
+```
 
 ## Project Structure
 
@@ -88,8 +99,8 @@ export PROJECT_OS_DIR=${PROJECT_OS_DIR:-../../openshift}
 export GIT_URI="https://github.com/bcgov/TheOrgBook.git"
 export GIT_REF="master"
 
-# The templates that should not have their GIT referances(uri and ref) over-ridden
-# Templates NOT in this list will have they GIT referances over-ridden
+# The templates that should not have their GIT references (uri and ref) over-ridden
+# Templates NOT in this list will have they GIT references over-ridden
 # with the values of GIT_URI and GIT_REF
 export -a skip_git_overrides="schema-spy-build.json solr-base-build.json"
 
