@@ -235,6 +235,18 @@ In the current instance of the deployment, the routes created are explicitly def
 updateRoutes.sh
 ```
 
+# Troubleshooting
+
+## OpenShift (Docker on MAC)
+
+If you run into certificate errors like `x509: certificate signed by unknown authority` when trying to connect to your local OpenShift cluster from the command line, log into the cluster from the command line using the token login from the web console.
+1. Login to the web console.
+1. From the **(?)** drop-down select **Command Line Tools**
+1. Copy the login command from the console.
+1. Paste it onto the command line.
+1. You should to prompted to allow insecure connections.
+1. Select `yes` and continue.
+
 # Scripts
 
 Following is a list of the top level scripts.  There additional lower level scripts that are not listed here since they are wrapped into top level scripts.
