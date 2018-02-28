@@ -7,7 +7,7 @@ OCTOOLSBIN=$(dirname $0)
 # -----------------------------------------------------------------------------------------------------------------
 usage() {
   cat <<-EOF
-  A helper script to copy files and folder to and from pods running in OpenShift.
+  A helper script to copy files and folders to and from pods running in OpenShift.
   Accepts the friendly or full name of a pod.
 
   Usage:
