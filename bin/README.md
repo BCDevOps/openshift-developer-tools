@@ -241,15 +241,15 @@ updateRoutes.sh
 
 # Troubleshooting
 
-# Disk Pressure Issue (MAC and Windows)
+## Disk Pressure Issue (MAC and Windows)
 
 If you start seeing builds and deploys failing due to disk pressure issues it's because OpenShift think you are running out of disk space and will start evicting pods.
 
-## Docker on Windows
+### Docker on Windows
 
 The quick fix is to delete the Moby LLinux VM and it's associated virtual disk and start again.
 
-## MiniShift
+### MiniShift
 
 The default settings for minishift create a small VM with very little memory and disk.
 
