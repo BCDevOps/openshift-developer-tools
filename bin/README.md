@@ -241,6 +241,27 @@ updateRoutes.sh
 
 # Troubleshooting
 
+# Disk Pressure Issue (MAC and Windows)
+
+If you start seeing builds and deploys failing due to disk pressure issues it's because OpenShift think you are running out of disk space and will start evicting pods.
+
+## Docker on Windows
+
+The quick fix is to delete the Moby LLinux VM and it's associated virtual disk and start again.
+
+## MiniShift
+
+The default settings for minishift create a small VM with very little memory and disk.
+
+The fix is to run the following commands to create a more suitable environment;
+```
+minishift stop
+minishift delete
+minishift config set disk-size 60g
+minishift config set memory 6GB
+minishift start
+```
+
 ## OpenShift (Docker on MAC)
 
 If you run into certificate errors like `x509: certificate signed by unknown authority` when trying to connect to your local OpenShift cluster from the command line, log into the cluster from the command line using the token login from the web console.
