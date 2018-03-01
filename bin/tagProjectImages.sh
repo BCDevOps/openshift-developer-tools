@@ -57,8 +57,9 @@ if [ -z "${SOURCE_TAG}" ] || [ -z "${DESTINATION_TAG}" ]; then
 fi
 # ==============================================================================
 
-echo -e \\n"Tagging images for dev environment deployment ..."\\n
+echo -e \\n"Tagging images for ${DESTINATION_TAG} environment deployment ..."
 for image in ${images}; do
-  oc tag ${image}:latest ${image}:dev -n ${TOOLS}
+  echo -e \\n"Tagging ${image}:${SOURCE_TAG} as ${image}:${DESTINATION_TAG} ..."
+  oc tag ${image}:${SOURCE_TAG} ${image}:${DESTINATION_TAG} -n ${TOOLS}
   exitOnError
 done
