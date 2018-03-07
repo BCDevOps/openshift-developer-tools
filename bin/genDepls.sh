@@ -70,7 +70,7 @@ for component in ${components}; do
     continue
   fi
 
-  echo -e \\n"Deploying deployment configuration for ${component} into the ${DEPLOYMENT_ENV_NAME} environment ..."\\n
+  echo -e \\n"Configuring the ${DEPLOYMENT_ENV_NAME} environment for ${component} ..."\\n
 	pushd ../${component}/openshift >/dev/null
 	compDeployments.sh component
 	exitOnError
