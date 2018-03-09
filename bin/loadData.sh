@@ -13,6 +13,9 @@ usage() { #Usage function
     -h prints the usage for the script
     -x run the script in debug mode to see what's happening
     -e <server> load data into the specified server (default: ${LOAD_DATA_SERVER}, Options: local/dev/test/prod/<URL>)
+    -p <profile> load a specific settings profile; setting.<profile>.sh
+    -P Use the default settings profile; settings.sh.  Use this flag to ignore all but the default 
+       settings profile when there is more than one settings profile defined for a project.    
 
   Update settings.sh and settings.local.sh files to set defaults
 
@@ -22,9 +25,11 @@ exit
 
 # In case you wanted to check what variables were passed
 # echo "flags = $*"
-while getopts e:gh FLAG; do
+while getopts p:Pe:gh FLAG; do
   case $FLAG in
     e ) LOAD_DATA_SERVER=$OPTARG ;;
+    p ) export PROFILE=$OPTARG ;;
+    P ) export IGNORE_PROFILES=1 ;;
     x ) export DEBUG=1 ;;
     h ) usage ;;
     \? ) #unrecognized option - show help

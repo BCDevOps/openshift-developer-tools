@@ -12,6 +12,9 @@ usage() { #Usage function
   ========
     -h prints the usage for the script
     -e <environment> recreate routes in the named environment (dev/test/prod) (default: ${DEPLOYMENT_ENV_NAME})
+    -p <profile> load a specific settings profile; setting.<profile>.sh
+    -P Use the default settings profile; settings.sh.  Use this flag to ignore all but the default 
+       settings profile when there is more than one settings profile defined for a project.    
     -x run the script in debug mode to see what's happening
 
     Update settings.sh and settings.local.sh files to set defaults
@@ -22,9 +25,11 @@ exit
 
 # In case you wanted to check what variables were passed
 # echo "flags = $*"
-while getopts e:xh FLAG; do
+while getopts p:Pe:xh FLAG; do
   case $FLAG in
     e ) DEPLOYMENT_ENV_NAME=$OPTARG ;;
+    p ) export PROFILE=$OPTARG ;;
+    P ) export IGNORE_PROFILES=1 ;;
     x ) export DEBUG=1 ;;
     h ) usage ;;
     \?) #unrecognized option - show help

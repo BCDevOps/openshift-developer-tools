@@ -14,6 +14,9 @@ usage() {
     -e <Environment> the environment (dev/test/prod) into which you are deploying (default: ${DEPLOYMENT_ENV_NAME})
     -c <component> to generate parameters for templates of a specific component
     -l apply local settings and parameters
+    -p <profile> load a specific settings profile; setting.<profile>.sh
+    -P Use the default settings profile; settings.sh.  Use this flag to ignore all but the default 
+       settings profile when there is more than one settings profile defined for a project.        
     -k keep the json produced by processing the template
     -u update OpenShift deployment configs instead of creating the configs
     -x run the script in debug mode to see what's happening
@@ -28,9 +31,11 @@ exit
 # Process the command line arguments
 # In case you wanted to check what variables were passed
 # echo "flags = $*"
-while getopts c:e:lukxhg FLAG; do
+while getopts p:Pc:e:lukxhg FLAG; do
   case $FLAG in
     c ) export COMP=$OPTARG ;;
+    p ) export PROFILE=$OPTARG ;;
+    P ) export IGNORE_PROFILES=1 ;;    
     e ) export DEPLOYMENT_ENV_NAME=$OPTARG ;;
     l ) export APPLY_LOCAL_SETTINGS=1 ;;
     u ) export OC_ACTION=replace ;;

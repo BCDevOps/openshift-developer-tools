@@ -133,6 +133,18 @@ export GIT_REF="openshift"
 
 These overrides come into play when you are generating local param files, and deploying into a local OpenShift environment.
 
+## Setting Profiles
+
+The scripts support setting profiles, which allow you to further manage your settings for different environments or occasions.  Unlike local settings (`settings.local.sh`), settings profiles are something you want to check into your repository.
+
+Settings profiles are loaded between the default settings (`settings.sh`) and the local settings (`settings.local.sh`), allowing you to apply your local settings to your profiles just as you would your default settings.
+
+Settings profiles work exactly like the other settings files.  To define a settings profile you simply have to create a file with the profile name; `settings.<ProfileName>.sh`.  The scripts will automatically detect the profiles and prompt you to either use them or ignore them.
+
+Scripts that support profiles will expose a `-p <profile>` (lower case p) flag to allow you to load a named profile setting, and a `-P` (upper case P) flag it allow you to use you default settings.
+
+Refer to the help (`-h`) output of the scripts for more details.
+
 ## Using the Scripts
 
 When using the scripts run them from the command line in the top level `./openshift` directory of your project.
