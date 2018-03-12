@@ -34,9 +34,16 @@ for build in ${BUILDS}; do
 
   JSONFILE="${TEMPLATE_DIR}/${build}.json"
   JSONTMPFILE=$( basename ${build}_BuildConfig.json )
-  PARAMFILE=$( basename ${build}.param )
+
+  if [ ! -z "${PROFILE}" ]; then
+    _paramFileName=$( basename ${build}.${PROFILE} )
+  else
+    _paramFileName=$( basename ${build} )
+  fi
+
+  PARAMFILE=$( basename ${_paramFileName}.param )
   if [ ! -z "${APPLY_LOCAL_SETTINGS}" ]; then
-    LOCALPARAM=${LOCAL_PARAM_DIR}/$( basename ${build}.local.param )
+    LOCALPARAM=${LOCAL_PARAM_DIR}/$( basename ${_paramFileName}.local.param )
   fi
 
   if [ -f "${PARAMFILE}" ]; then

@@ -113,30 +113,38 @@ getParameterFileCommentFilter () {
     exit 1
   fi
 
+  # Default; Comment out everything ...
   _commentFilter="s~^~#~;"
   
   case ${_type} in
     r ) # Regular file
       _commentFilter=cat
       ;;
+    [dtp] ) # Dev, Test, and Prod Files
+      # Uncomment the main environment specific settings ...
+      _commentFilter="${_commentFilter}/TAG_NAME/s~^#~~;"
+      _commentFilter="${_commentFilter}/APPLICATION_DOMAIN/s~^#~~;"
+
+      _commentFilter="sed ${_commentFilter}"
+      ;;
     l ) # Local file
       # Uncomment the main local settings ...
-      _commentFilter="${_commentFilter}/GIT_REPO_URL/s~^#~~;"      
-      _commentFilter="${_commentFilter}/GIT_REF/s~^#~~;"      
+      _commentFilter="${_commentFilter}/GIT_REPO_URL/s~^#~~;"
+      _commentFilter="${_commentFilter}/GIT_REF/s~^#~~;"
       
-      _commentFilter="${_commentFilter}/MEMORY_LIMIT/s~^#~~;"      
-      _commentFilter="${_commentFilter}/MEMORY_REQUEST/s~^#~~;"      
-      _commentFilter="${_commentFilter}/CPU_LIMIT/s~^#~~;"      
+      _commentFilter="${_commentFilter}/MEMORY_LIMIT/s~^#~~;"
+      _commentFilter="${_commentFilter}/MEMORY_REQUEST/s~^#~~;"
+      _commentFilter="${_commentFilter}/CPU_LIMIT/s~^#~~;"
       _commentFilter="${_commentFilter}/CPU_REQUEST/s~^#~~;"
 
       _commentFilter="sed ${_commentFilter}"
       ;;
     *) # unrecognized option
       _commentFilter="sed ${_commentFilter}"
-      ;;      
+      ;;
   esac
 
-  echo "${_commentFilter}"  
+  echo "${_commentFilter}"
 }
 
 getParameterFileOutputPrefix () {
@@ -165,21 +173,27 @@ getParameterFileOutputPath () {
   fi
 
   _outputPrefix=$(getParameterFileOutputPrefix "${_type}")
+  if [ ! -z "${PROFILE}" ]; then
+    _outputFilename="${_fileName}.${PROFILE}"
+  else
+    _outputFilename="${_fileName}"
+  fi
+
   case ${_type} in
     r ) # Regular file
-      _output=${_outputPrefix}$( basename ${_fileName}.param )
+      _output=${_outputPrefix}$( basename ${_outputFilename}.param )
       ;;
     d ) # Dev File
-      _output=${_outputPrefix}$( basename ${_fileName}.${DEV}.param )
+      _output=${_outputPrefix}$( basename ${_outputFilename}.${DEV}.param )
       ;;
     t ) # Test File
-      _output=${_outputPrefix}$( basename ${_fileName}.${TEST}.param )
+      _output=${_outputPrefix}$( basename ${_outputFilename}.${TEST}.param )
       ;;
     p ) # Prod
-      _output=${_outputPrefix}$( basename ${_fileName}.${PROD}.param )
+      _output=${_outputPrefix}$( basename ${_outputFilename}.${PROD}.param )
       ;;
     l ) # Local Files
-      _output=${_outputPrefix}/$( basename ${_fileName}.local.param )
+      _output=${_outputPrefix}/$( basename ${_outputFilename}.local.param )
       ;;
     *) # unrecognized option
       echoError  "\ngetParameterFileOutputPath; Invalid type option\n"
@@ -209,7 +223,6 @@ generateParameterFilter (){
       ;;
     t ) # Test File
       _environment=${TEST}
-      _parameterFilters="${_parameterFilters}s~\(^TAG_NAME=\).*$~\1${TEST}~;"
       ;;
     p ) # Prod
       _environment=${PROD}
@@ -275,6 +288,10 @@ generateParameterFile (){
 }
 # =================================================================================================================
 
+
+# =================================================================================================================
+# Main:
+# -----------------------------------------------------------------------------------------------------------------
 for component in ${components}; do
   if [ ! -z "${COMP}" ] && [ ! "${COMP}" = ${component} ]; then
     # Only process named component if -c option specified
@@ -333,3 +350,4 @@ if [ ! -z "${FORCENOTE}" ]; then
   echoWarning "\nOne or more parameter files to be generated already exist and were not overwritten.\nUse the -f option to force the overwriting of existing files.\n"
   unset FORCENOTE
 fi
+# =================================================================================================================

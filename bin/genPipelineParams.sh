@@ -132,6 +132,9 @@ generatePipelineParameterFile (){
 }
 # =================================================================================================================
 
+# =================================================================================================================
+# Main:
+# -----------------------------------------------------------------------------------------------------------------
 if [ ! -z "${APPLY_LOCAL_SETTINGS}" ]; then
   COMMENTFILTER=$(getLocalPipelineCommentFilter)
   _outputDir=$(pwd -P)
@@ -165,3 +168,4 @@ if [ ! -z "${FORCENOTE}" ]; then
   echoWarning "One or more pipeline parameter files to be generated already exist and were not overwritten.\nUse the -f option to force the overwriting of existing files.\n"
   unset FORCENOTE
 fi
+# =================================================================================================================
