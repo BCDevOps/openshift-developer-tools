@@ -274,8 +274,13 @@ getPipelineParameterFileOutputPath () {
   fi
 
   if [ -f "${_jenkinsFile}" ]; then
-    _name=$(getJenkinsFileName ${_jenkinsFile})
     _directory=$(getDirectory ${_jenkinsFile})
+    _jenkinsFileName=$(getJenkinsFileName ${_jenkinsFile})
+    if [ ! -z "${PROFILE}" ]; then
+      _name="${_jenkinsFileName}.${PROFILE}"
+    else
+      _name="${_jenkinsFileName}"
+    fi
 
     if [ ! -z "${_localOutputDir}" ]; then
       _componentName=$(getComponentNameFromDir ${_directory})
