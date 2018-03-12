@@ -71,12 +71,18 @@ generateConfigs() {
 
     JSONFILE="${TEMPLATE_DIR}/${deploy}.json"
     JSONTMPFILE=$( basename ${deploy}${DEPLOYMENT_CONFIG_SUFFIX} )
-    PARAMFILE=$( basename ${deploy}.param )
-    ENVPARAM=$( basename ${deploy}.${DEPLOYMENT_ENV_NAME}.param )
     PARAM_OVERRIDE_SCRIPT=$( basename ${deploy}.overrides.sh ) 
-    
+
+    if [ ! -z "${PROFILE}" ]; then
+      _paramFileName=$( basename ${deploy}.${PROFILE} )
+    else
+      _paramFileName=$( basename ${deploy} )
+    fi
+
+    PARAMFILE=$( basename ${_paramFileName}.param )
+    ENVPARAM=$( basename ${_paramFileName}.${DEPLOYMENT_ENV_NAME}.param )
     if [ ! -z "${APPLY_LOCAL_SETTINGS}" ]; then
-      LOCALPARAM=${LOCAL_PARAM_DIR}/$( basename ${deploy}.local.param )
+      LOCALPARAM=${LOCAL_PARAM_DIR}/$( basename ${_paramFileName}.local.param )
     fi
     
     if [ -f "${PARAMFILE}" ]; then

@@ -144,7 +144,7 @@ getParameterFileCommentFilter () {
       ;;
   esac
 
-  echo "${_commentFilter}"  
+  echo "${_commentFilter}"
 }
 
 getParameterFileOutputPrefix () {

@@ -74,7 +74,7 @@ for component in ${components}; do
     continue
   fi
 
-  echo -e \\n"Deploying build configuration for ${component} into the ${TOOLS} project ..."
+  echo -e \\n"Configuring the ${TOOLS} environment for ${component} ..."\\n  
   pushd ../${component}/openshift >/dev/null
   compBuilds.sh component
   exitOnError
