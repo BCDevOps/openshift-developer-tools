@@ -19,7 +19,7 @@ getProfiles() {
 isLocalProfile() {
   _profiles=$(getProfiles)
   _count=$(countProfiles ${_profiles})
-  if [[ ${_count} -eq 1 && "${_profiles}" == "${_localProfileName}" ]]; then
+  if [[ ${_count} -le 1 && (-z "${_profiles}" || "${_profiles}" == "${_localProfileName}") ]]; then
     return 0
   else
     return 1
