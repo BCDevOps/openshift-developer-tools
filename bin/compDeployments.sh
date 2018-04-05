@@ -128,7 +128,7 @@ generateConfigs() {
 # Main Script:
 # -----------------------------------------------------------------------------------------------------------------
 # Switch to desired project space ...
-oc project ${PROJECT_NAMESPACE}-${DEPLOYMENT_ENV_NAME} >/dev/null
+switchProject
 exitOnError
 
 echo -e "Removing dangling configuration files ..."

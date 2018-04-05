@@ -47,14 +47,19 @@ if [ -f ${OCTOOLSBIN}/settings.sh ]; then
   . ${OCTOOLSBIN}/settings.sh
 fi
 
+if [ -f ${OCTOOLSBIN}/ocFunctions.inc ]; then
+  . ${OCTOOLSBIN}/ocFunctions.inc
+fi
+
 if [ ! -z "${DEBUG}" ]; then
   set -x
 fi
 
 # ===================================================================================
 # Fix routes
-echo -e "Update routes to default in the project: ${PROJECT_NAMESPACE}-${DEPLOYMENT_ENV_NAME}"
-oc project ${PROJECT_NAMESPACE}-${DEPLOYMENT_ENV_NAME}
+echo -e "Update routes to default in ${PROJECT_NAMESPACE}-${DEPLOYMENT_ENV_NAME} ..."
+switchProject
+
 for route in ${routes}; do
   oc delete route ${route}
   oc create route edge --service=${route}

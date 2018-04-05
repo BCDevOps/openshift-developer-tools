@@ -31,7 +31,11 @@ exitOnError () {
 }
 # ==============================================================================================================================
 if [ -z "${1}" ]; then
-  usage
+  if [ -z "${PROJECT_NAMESPACE}" ] || [ -z "${DEPLOYMENT_ENV_NAME}" ]; then
+    usage
+  else
+    PROJECT_NAME=${PROJECT_NAMESPACE}-${DEPLOYMENT_ENV_NAME}
+  fi
 else
   PROJECT_NAME=${1}
 fi

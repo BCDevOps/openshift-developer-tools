@@ -97,8 +97,9 @@ if [ -z ${GEN_ONLY} ]; then
   read -n1 -s -r -p "Press a key to continue..." key
   echo -e \\n
 
-  oc project ${TOOLS} >/dev/null
+  switchProject ${TOOLS}
   exitOnError
+  
   for build in ${builds}; do
     echo -e \\n"Manually triggering build of ${build}..."\\n
     oc start-build ${build}
