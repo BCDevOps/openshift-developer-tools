@@ -212,7 +212,7 @@ _OUTPUT_DIR=$(getRelativeOutputDir)
 echo -e \\n"Deploying secret(s) into the ${DEPLOYMENT_ENV_NAME} (${PROJECT_NAMESPACE}-${DEPLOYMENT_ENV_NAME}) environment ..."\\n
 
 # Switch to the selected project ...
-oc project ${PROJECT_NAMESPACE}-${DEPLOYMENT_ENV_NAME} >/dev/null
+switchProject
 exitOnError
 
 # Get list of all of the secret templates in the project ...

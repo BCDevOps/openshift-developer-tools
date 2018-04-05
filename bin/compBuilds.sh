@@ -23,7 +23,7 @@ BUILDS=$(find . -name "*.json" -exec grep -l "BuildConfig\|\"ImageStream\"" '{}'
 popd >/dev/null
 
 # Switch to Tools Project
-oc project ${TOOLS} >/dev/null
+switchProject ${TOOLS}
 exitOnError
 
 # Local params file path MUST be relative...Hack!

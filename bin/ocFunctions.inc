@@ -25,6 +25,21 @@ echoError (){
   echo -e "${_red}${_msg}${_nc}"
 }
 
+printAndWait() {
+  _msg=${@}
+  if [ -z "${_msg}" ]; then
+    echo -e \\n"printAndWait; Missing parameter!"\\n
+    exit 1
+  fi
+
+  echoWarning "\n${_msg}"
+  read -n1 -s -r -p $'Press any key to continue ...' key
+  echo -e \\n
+
+  # If we get here the user did NOT press Ctrl-C ...
+  return 0
+}
+
 exitOnError () {
   rtnCd=$?
   if [ ${rtnCd} -ne 0 ]; then
@@ -325,3 +340,158 @@ getPipelineName (){
   # Pipeline names MUST be lowercase
   echo $(echo ${_pipelineName} | tr '[:upper:]' '[:lower:]')
 }
+
+runInContainerInteractively() {
+  _podName=${1}
+  _command=${2:-echo Hello}
+  if [ -z "${_podName}" ] || [ -z "${_command}" ]; then
+    echo -e \\n"runInContainerInteractively; Missing parameter!"\\n
+    exit 1
+  fi
+
+  _podInstanceName=$(getPodByName.sh ${_podName})
+  exitOnError
+
+  echo
+  echo "Executing command on ${_podInstanceName}:"
+  echo -e "\t${_command}"
+  echo
+
+  oc exec -i "${_podInstanceName}" -- bash -c "${_command}"
+}
+
+scaleUp() {
+  _pods=${@}
+  if [ -z "${_pods}" ]; then
+    echo -e \\n"scaleUp; Missing parameter!"\\n
+    exit 1
+  fi
+
+  for _pod in ${_pods}; do
+    scaleDeployment ${_pod} 1
+  done  
+}
+
+scaleDown() {
+  _pods=${@}
+  if [ -z "${_pods}" ]; then
+    echo -e \\n"scaleDown; Missing parameter!"\\n
+    exit 1
+  fi
+
+  for _pod in ${_pods}; do
+    scaleDeployment ${_pod}
+  done  
+}
+
+scaleDeployment() {
+  _deplymentConfigName=${1}
+  _numReplicas=${2:-0}
+  if [ -z "${_deplymentConfigName}" ] || [ -z "${_numReplicas}" ]; then
+    echo -e \\n"scaleDeployment; Missing parameter!"\\n
+    exit 1
+  fi
+
+  oc scale --replicas=${_numReplicas} dc ${_deplymentConfigName}
+}
+
+deleteFromPods() {
+  _path=${1}
+  shift
+  _pods=${@}
+  if [ -z "${_path}" ] || [ -z "${_pods}" ]; then
+    echo -e \\n"deleteFromPods; Missing parameter!"\\n
+    exit 1
+  fi
+
+  for _pod in ${_pods}; do
+    deleteFromPod "${_pod}" "${_path}"
+  done
+}
+
+deleteFromPod() {
+  _podName=${1}
+  _path=${2}
+  _cmd="rm -rf ${_path}"
+  if [ -z "${_podName}" ] || [ -z "${_path}" ]; then
+    echo -e \\n"deleteFromPod; Missing parameter!"\\n
+    exit 1
+  fi
+
+  runInContainer.sh "${_podName}" "${_cmd}"
+}
+
+switchProject() {
+  _projectName=${1:-${PROJECT_NAMESPACE}-${DEPLOYMENT_ENV_NAME}}
+  echo "Switching to ${_projectName} ..."
+  oc project ${_projectName} >/dev/null
+}
+
+toLower() {
+  echo $(echo ${@} | tr '[:upper:]' '[:lower:]')
+}
+
+getAllPods() {
+  _pods=${@}
+  if [ ! -z "${_pods}" ]; then
+    echo "${_pods}"
+  else
+    oc get dc | awk '{if(NR>1)print $1}'
+  fi  
+}
+
+# =================================================================================================================
+# Hyperledger Indy Specific Functions:
+# -----------------------------------------------------------------------------------------------------------------
+# You need to supply your own getLedgerAddress implementation.
+# -----------------------------------------------------------------------------------------------------------------
+registerDid() {
+  _name=${1}
+  if [ -z "${_name}" ]; then
+    echo -e \\n"registerDid; Missing parameter!"\\n
+    exit 1
+  fi
+  _seedData=$(getSeedData ${_name})
+  _ledgerAddress=$(getLedgerAddress)
+  _ledgerUri="http://${_ledgerAddress}/register"
+
+  echo "Registering with the ledger ..."
+  curl -X POST \
+    ${_ledgerUri} \
+    -H 'content-type: application/json' \
+    -d "${_seedData}"
+}
+
+getSeedData() {
+  _name=${1}
+  if [ -z "${_name}" ]; then
+    echo -e \\n"getSeedData; Missing parameter!"\\n
+    exit 1
+  fi
+
+  _seed=$(generateSeed $(getSeedName ${_name}))
+  echo "{\"seed\": \"${_seed}\"}"
+
+}
+
+getSeedName() {
+  _name=${1}
+  if [ -z "${_name}" ]; then
+    echo -e \\n"getSeedName; Missing parameter!"\\n
+    exit 1
+  fi
+
+  echo "${_name}_${DEPLOYMENT_ENV_NAME}_"
+}
+
+generateSeed() {
+  _name=${1}
+  if [ -z "${_name}" ]; then
+    echo -e \\n"generateSeed; Missing parameter!"\\n
+    exit 1
+  fi
+
+  _seed=$(printf "%s%0$((32-${#_name}))d" ${_name} 0)
+  echo ${_seed}
+}
+# =================================================================================================================
