@@ -445,6 +445,18 @@ getAllPods() {
 # -----------------------------------------------------------------------------------------------------------------
 # You need to supply your own getLedgerAddress implementation.
 # -----------------------------------------------------------------------------------------------------------------
+registerDids() {
+  _names=${@}
+  if [ -z "${_names}" ]; then
+    echo -e \\n"registerDids; Missing parameter!"\\n
+    exit 1
+  fi
+
+  for _name in ${_names}; do
+    registerDid ${_name}
+  done
+}
+
 registerDid() {
   _name=${1}
   if [ -z "${_name}" ]; then
@@ -455,7 +467,7 @@ registerDid() {
   _ledgerAddress=$(getLedgerAddress)
   _ledgerUri="http://${_ledgerAddress}/register"
 
-  echo "Registering with the ledger ..."
+  echo -e \\n"Registering ${_name} with the ledger ..."
   curl -X POST \
     ${_ledgerUri} \
     -H 'content-type: application/json' \
