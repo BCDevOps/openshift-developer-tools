@@ -214,6 +214,11 @@ if [ -z "${SETTINGS_LOADED}" ]; then
   export GLUSTER_ENDPOINT_CONFIG=${GLUSTER_ENDPOINT_CONFIG:-https://raw.githubusercontent.com/BCDevOps/openshift-tools/master/resources/glusterfs-cluster-app-endpoints.yml}
   export GLUSTER_SVC_CONFIG=${GLUSTER_SVC_CONFIG:-https://raw.githubusercontent.com/BCDevOps/openshift-tools/master/resources/glusterfs-cluster-app-service.yml}
   export GLUSTER_SVC_NAME=${GLUSTER_SVC_NAME:-glusterfs-cluster-app}
+
+
+  # Build and deployment settings
+  export DEPLOYMENT_CONFIG_SUFFIX="_DeploymentConfig.json"
+
   # ===========================================================================================================
 
   # ===========================================================================================================

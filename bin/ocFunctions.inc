@@ -40,7 +40,7 @@ printAndWait() {
   return 0
 }
 
-exitOnError () {
+exitOnError() {
   rtnCd=$?
   if [ ${rtnCd} -ne 0 ]; then
     echoError "An error has occurred.  Please check the previous output message(s) for details."
@@ -438,6 +438,31 @@ getAllPods() {
   else
     oc get dc | awk '{if(NR>1)print $1}'
   fi  
+}
+
+getConfigFiles() {
+  _configFiles=${@}
+  if [ ! -z "${_configFiles}" ]; then
+    echo "${_configFiles}"
+  else
+    find . -name "*${DEPLOYMENT_CONFIG_SUFFIX}"
+  fi
+}
+
+cleanConfigs() {
+  _configFiles=$(getConfigFiles ${@})
+  for configFile in ${_configFiles}; do
+    echo -e \\t"Deleting deployment config file; ${configFile} ..."
+    rm ${configFile}
+  done
+}
+
+deployConfigs() {
+  _configFiles=$(getConfigFiles ${@})
+  for configFile in ${_configFiles}; do
+    oc ${OC_ACTION} -f ${configFile}
+    exitOnError
+  done
 }
 
 # =================================================================================================================
