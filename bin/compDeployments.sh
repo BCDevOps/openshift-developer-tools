@@ -34,31 +34,9 @@ fi
 # -----------------------------------------------------------------------------------------------------------------
 # Local params file path MUST be relative...Hack!
 LOCAL_PARAM_DIR=${PROJECT_OS_DIR}
-DEPLOYMENT_CONFIG_SUFFIX="_DeploymentConfig.json"
 # -----------------------------------------------------------------------------------------------------------------
 # Functions:
 # -----------------------------------------------------------------------------------------------------------------
-getConfigFiles() {
-  _configFiles=$(find . -name "*${DEPLOYMENT_CONFIG_SUFFIX}")
-  echo "${_configFiles}"  
-}
-
-cleanConfigs() {
-  _configFiles=$(getConfigFiles)
-  for configFile in ${_configFiles}; do
-    echo -e \\t"Deleting deployment config file; ${configFile} ..."
-    rm ${configFile}
-  done
-}
-
-deployConfigs() {
-  _configFiles=$(getConfigFiles)
-  for configFile in ${_configFiles}; do
-    oc ${OC_ACTION} -f ${configFile}
-    exitOnError
-  done  
-}
-
 generateConfigs() {
   # Get list of JSON files - could be in multiple directories below
   # To Do: Remove the change into TEMPLATE_DIR - just find all deploy templates
