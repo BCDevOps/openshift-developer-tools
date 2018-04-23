@@ -440,6 +440,21 @@ getAllPods() {
   fi  
 }
 
+removeFromList() {
+  _list=${1}
+  _remove=${2}
+  if [ -z "${_list}" ]; then
+    echo -e \\n"removeFromList; Missing parameter!"\\n
+    exit 1
+  fi
+
+  for _item in ${_remove}; do
+    _list=$(echo ${_list} | sed "s~[[:space:]]\+${_item}[[:space:]]\+~ ~g")
+  done  
+
+  echo ${_list}
+}
+
 getConfigFiles() {
   _configFiles=${@}
   if [ ! -z "${_configFiles}" ]; then
@@ -463,6 +478,23 @@ deployConfigs() {
     oc ${OC_ACTION} -f ${configFile}
     exitOnError
   done
+}
+
+runInContainer() {
+  # This is a quite version of runInContainer.sh
+  _podName=${1}
+  _command=${2}
+  _podIndex=${3:-0}
+  if [ -z "${_podName}" ] || [ -z "${_command}" ]; then
+    echo -e \\n"runInContainer; Missing parameter!"\\n
+    exit 1
+  fi
+
+  # Get name of a currently deployed pod by label and index
+  _podInstanceName=$(getPodByName.sh "${_podName}" "${_podIndex}")
+  if [ ! -z "${_podInstanceName}" ]; then
+    oc exec "${_podInstanceName}" -- bash -c "${_command:-echo Hello}"
+  fi
 }
 
 # =================================================================================================================
