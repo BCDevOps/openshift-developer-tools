@@ -88,7 +88,7 @@ exitOnError
 
 echo
 echo "Executing command on ${POD_INSTANCE_NAME}:"
-echo -e "\t${COMMAND:-echo}"
+echo -e "\t${COMMAND:-echo Hello}"
 echo
 
 # Run command in a container of the specified pod:
