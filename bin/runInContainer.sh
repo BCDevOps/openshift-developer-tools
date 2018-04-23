@@ -31,12 +31,22 @@ usage () {
   echo "   See examples for details."
   echo
   echo "Examples:"
+  echo "----------------------------------------------------------------------------------------"
+  echo "Database Information:"
   echo "${0} postgresql 'psql -c \"\l\"'"
   echo "${0} postgresql 'psql -c \"\du\"'"
+  echo
+  echo "Drop and recreate database; Explicitly:"
   echo "${0} postgresql \"psql -c 'DROP DATABASE \"TheOrgBook_Database\";'\""
   echo "${0} postgresql \"psql -c 'CREATE DATABASE \"TheOrgBook_Database\";'\""
   echo "${0} postgresql \"psql -c 'GRANT ALL ON DATABASE \"TheOrgBook_Database\" TO \"TheOrgBook_User\";'\""
   echo
+  echo "Drop and recreate database; Dynamically using environment variables:"
+  echo "${0} postgresql 'psql -ac \"DROP DATABASE \\\"\${POSTGRESQL_DATABASE}\\\";\"'"
+  echo "${0} postgresql 'psql -ac \"CREATE DATABASE \\\"\${POSTGRESQL_DATABASE}\\\";\"'"
+  echo "${0} postgresql 'psql -ac \"GRANT ALL ON DATABASE \\\"\${POSTGRESQL_DATABASE}\\\" TO \\\"\${POSTGRESQL_USER}\\\";\"'"
+  echo
+  echo "Running Python commands:"
   echo "${0} django 'python ./manage.py migrate'"
   echo "${0} django 'python ./manage.py createsuperuser'"
   echo "${0} django 'python ./manage.py shell'"

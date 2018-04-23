@@ -14,22 +14,13 @@ usage () {
   echo "========================================================================================"
   exit 1
 }
-
-exitOnError () {
-  rtnCd=$?
-  if [ ${rtnCd} -ne 0 ]; then
-	echo "An error has occurred while getting the name of the pod!  Please check the previous output message(s) for details."
-    exit ${rtnCd}
-  fi
-}
 # ==============================================================================================================================
 
 if [ -z "${1}" ]; then
   usage
 fi
 
-POD_INSTANCE_NAME=`oc get pods -l "name=${1}" --template "{{ with index .items ${2:-0} }}{{ .metadata.name }}{{ end }}"`
-exitOnError
+POD_INSTANCE_NAME=$(oc get pods -l "name=${1}" --template "{{ with index .items ${2:-0} }}{{ .metadata.name }}{{ end }}" --ignore-not-found)
 echo ${POD_INSTANCE_NAME}
 
 

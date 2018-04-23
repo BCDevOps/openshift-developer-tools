@@ -466,6 +466,72 @@ deployConfigs() {
 }
 
 # =================================================================================================================
+# Database Managment Functions:
+# -----------------------------------------------------------------------------------------------------------------
+dropAndRecreatePostgreSqlDatabase() {
+  # This function drops and recreates a PostgreSql database on a remote pod.
+  # You must specify the friendly name of the pod hosting the database.
+  # The associated database infomration including Database Name and Username
+  # are assumed to exist on the pod in environment variables; ${POSTGRESQL_DATABASE} and ${POSTGRESQL_USER}.
+  _databasePodName=${1}
+  if [ -z "${_databasePodName}" ]; then
+    echo -e \\n"dropAndRecreatePostgreSqlDatabase; Missing parameter!"\\n
+    exit 1
+  fi
+
+  echo "============================================================================="
+  echo "Recreating database ..."
+  echo "-----------------------------------------------------------------------------"
+  runInContainer.sh \
+  ${_databasePodName} \
+  'psql -ac "DROP DATABASE \"${POSTGRESQL_DATABASE}\";"'
+
+  runInContainer.sh \
+  ${_databasePodName} \
+  'psql -ac "CREATE DATABASE \"${POSTGRESQL_DATABASE}\";"'
+
+  runInContainer.sh \
+  ${_databasePodName} \
+  'psql -ac "GRANT ALL ON DATABASE \"${POSTGRESQL_DATABASE}\" TO \"${POSTGRESQL_USER}\";"'
+  echo "============================================================================"
+  echo
+
+  echo "============================================================================="
+  echo "Listing databases ..."
+  echo "-----------------------------------------------------------------------------"
+  runInContainer.sh \
+  ${_databasePodName} \
+  'psql -c "\l"'
+  echo "============================================================================"
+  echo
+}
+
+dropAndRecreateDatabaseWithMigrations() {
+  # This function drops and recreates a PostgreSql database who's schema 
+  # is managed by migrations hosted on an API pod.
+  _apiPodName=${1}
+  _dbPodName=${2}
+  if [ -z "${_apiPodName}" ] || [ -z "${_dbPodName}" ]; then
+    echo -e \\n"dropAndRecreateDatabaseWithMigrations; Missing parameter!"\\n
+    exit 1
+  fi
+
+  scaleDown ${_apiPodName}
+  exitOnError
+  
+  printAndWait "Wait for the ${_apiPodName} pod to completely shut down before continuing."
+
+  dropAndRecreatePostgreSqlDatabase ${_dbPodName}
+  exitOnError
+  
+  scaleUp ${_apiPodName}
+  exitOnError
+
+  printAndWait "Wait for the ${_apiPodName} pod to completely start up and ensure it has finished running the database migrations before continuing."
+}
+# =================================================================================================================
+
+# =================================================================================================================
 # Hyperledger Indy Specific Functions:
 # -----------------------------------------------------------------------------------------------------------------
 # You need to supply your own getLedgerAddress implementation.
