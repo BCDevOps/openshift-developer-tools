@@ -539,27 +539,31 @@ dropAndRecreatePostgreSqlDatabase() {
 }
 
 dropAndRecreateDatabaseWithMigrations() {
-  # This function drops and recreates a PostgreSql database who's schema 
-  # is managed by migrations hosted on an API pod.
-  _apiPodName=${1}
-  _dbPodName=${2}
-  if [ -z "${_apiPodName}" ] || [ -z "${_dbPodName}" ]; then
-    echo -e \\n"dropAndRecreateDatabaseWithMigrations; Missing parameter!"\\n
-    exit 1
-  fi
+  (
+    # This function drops and recreates a PostgreSql database who's schema 
+    # is managed by migrations hosted on an API pod.
+    #
+    # The function is purposely wrapped in a subshell `(...)` to avoid variable name collisions.
+    _apiPodName=${1}
+    _dbPodName=${2}
+    if [ -z "${_apiPodName}" ] || [ -z "${_dbPodName}" ]; then
+      echo -e \\n"dropAndRecreateDatabaseWithMigrations; Missing parameter!"\\n
+      exit 1
+    fi
 
-  scaleDown ${_apiPodName}
-  exitOnError
-  
-  printAndWait "Wait for the ${_apiPodName} pod to completely shut down before continuing."
+    scaleDown ${_apiPodName}
+    exitOnError
 
-  dropAndRecreatePostgreSqlDatabase ${_dbPodName}
-  exitOnError
-  
-  scaleUp ${_apiPodName}
-  exitOnError
+    printAndWait "Wait for the ${_apiPodName} pod to completely shut down before continuing."
 
-  printAndWait "Wait for the ${_apiPodName} pod to completely start up and ensure it has finished running the database migrations before continuing."
+    dropAndRecreatePostgreSqlDatabase ${_dbPodName}
+    exitOnError
+
+    scaleUp ${_apiPodName}
+    exitOnError
+
+    printAndWait "Wait for the ${_apiPodName} pod to completely start up and ensure it has finished running the database migrations before continuing."
+  )
 }
 # =================================================================================================================
 
