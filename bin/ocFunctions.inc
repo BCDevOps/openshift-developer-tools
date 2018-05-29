@@ -1,3 +1,5 @@
+#!/bin/bash
+
 getRelativeOutputDir () {
   # Assumes you are starting in the projects root openshift directory ...
   _openshiftDir=$(pwd -P)
@@ -204,7 +206,7 @@ getJenkinsFiles () {
 }
 
 getConfigTemplates () {
- echo $(find . -name "*json" -exec grep -l "DeploymentConfig\|BuildConfig\|Route\|\"ImageStream\"" '{}' \; | sed "s/.json//" | xargs | sed "s/\.\///g")
+ echo $(find . -regex "^.*json\|^.*yaml" -exec grep -l "DeploymentConfig\|BuildConfig\|Route\|\"ImageStream\"\|kind:.ImageStream$" '{}' \; | xargs | sed "s/\.\///g")
 }
 
 getComponentNameFromDir () {
