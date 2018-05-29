@@ -18,9 +18,9 @@ if [ ! -z "${DEBUG}" ]; then
 fi
 
 # Get list of JSON files - could be in multiple directories below
-pushd ${TEMPLATE_DIR} >/dev/null
-BUILDS=$(find . -name "*.json" -exec grep -l "BuildConfig\|\"ImageStream\"" '{}' \; | sed "s/.json//" | xargs | sed "s/\.\///g")
-popd >/dev/null
+if [ -d "${TEMPLATE_DIR}" ]; then
+  BUILDS=$(find ${TEMPLATE_DIR} -name "*.json" -exec grep -l "BuildConfig\|\"ImageStream\"" '{}' \; | sed "s/.json//" | xargs | sed "s/\.\///g")
+fi
 
 # Switch to Tools Project
 switchProject ${TOOLS}
@@ -32,7 +32,7 @@ LOCAL_PARAM_DIR=${PROJECT_OS_DIR}
 for build in ${BUILDS}; do
   echo -e \\n"Processing build configuration; ${build}..."
 
-  JSONFILE="${TEMPLATE_DIR}/${build}.json"
+  JSONFILE="${build}.json"
   JSONTMPFILE=$( basename ${build}_BuildConfig.json )
 
   if [ ! -z "${PROFILE}" ]; then

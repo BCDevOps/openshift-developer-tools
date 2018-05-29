@@ -39,15 +39,14 @@ LOCAL_PARAM_DIR=${PROJECT_OS_DIR}
 # -----------------------------------------------------------------------------------------------------------------
 generateConfigs() {
   # Get list of JSON files - could be in multiple directories below
-  # To Do: Remove the change into TEMPLATE_DIR - just find all deploy templates
-  pushd ${TEMPLATE_DIR} >/dev/null
-  DEPLOYS=$(find . -name "*.json" -exec grep -l "DeploymentConfig\|Route" '{}' \; | sed "s/.json//" | xargs | sed "s/\.\///g")
-  popd >/dev/null
+  if [ -d "${TEMPLATE_DIR}" ]; then
+    DEPLOYS=$(find ${TEMPLATE_DIR} -name "*.json" -exec grep -l "DeploymentConfig\|Route" '{}' \; | sed "s/.json//" | xargs | sed "s/\.\///g")
+  fi
 
   for deploy in ${DEPLOYS}; do
     echo -e \\n\\n"Processing deployment configuration; ${deploy} ..."
 
-    JSONFILE="${TEMPLATE_DIR}/${deploy}.json"
+    JSONFILE="${deploy}.json"
     JSONTMPFILE=$( basename ${deploy}${DEPLOYMENT_CONFIG_SUFFIX} )
     PARAM_OVERRIDE_SCRIPT=$( basename ${deploy}.overrides.sh ) 
 
