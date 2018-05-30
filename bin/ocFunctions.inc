@@ -477,6 +477,23 @@ removeFromList() {
   echo ${_list}
 }
 
+getOverrideParamFiles() {
+  _overrideParamFiles=${@}
+  if [ ! -z "${_overrideParamFiles}" ]; then
+    echo "${_overrideParamFiles}"
+  else
+    find . -name "*${OVERRIDE_PARAM_SUFFIX}"
+  fi
+}
+
+cleanOverrideParamFiles() {
+  _overrideParamFiles=$(getOverrideParamFiles ${@})
+  for overrideParamFile in ${_overrideParamFiles}; do
+    echo -e \\t"Deleting override param file; ${overrideParamFile} ..."
+    rm ${overrideParamFile}
+  done
+}
+
 getConfigFiles() {
   _configFiles=${@}
   if [ ! -z "${_configFiles}" ]; then

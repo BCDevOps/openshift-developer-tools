@@ -111,9 +111,13 @@ exitOnError
 
 echo -e "Removing dangling configuration files ..."
 cleanConfigs
+cleanOverrideParamFiles
 
 echo -e \\n"Generating deployment configuration files ..."
 generateConfigs
+
+echo -e \\n\\n"Removing temporary param override files ..."
+cleanOverrideParamFiles
 
 if [ -z ${GEN_ONLY} ]; then
   echo -e \\n"Deploying deployment configuration files ..."
