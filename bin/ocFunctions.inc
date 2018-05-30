@@ -202,11 +202,21 @@ getSecretFiles () {
 }
 
 getJenkinsFiles () {
- echo $(find . -name "*Jenkinsfile")
+  echo $(find . -name "*Jenkinsfile")
 }
 
 getConfigTemplates () {
- echo $(find . -regex "^.*json\|^.*yaml" -exec grep -l "DeploymentConfig\|BuildConfig\|Route\|\"ImageStream\"\|kind:.ImageStream$" '{}' \; | xargs | sed "s/\.\///g")
+  echo $(find . -regex "^.*json\|^.*yaml" -exec grep -l "DeploymentConfig\|BuildConfig\|Route\|\"ImageStream\"\|kind:.ImageStream$" '{}' \; | xargs | sed "s/\.\///g")
+}
+
+getBuildTemplates () {
+  _searchPath=${1}
+   if [ -z "${_searchPath}" ]; then
+    echo -e \\n"getBuildTemplates; Missing parameter!"\\n
+    exit 1
+  fi
+
+  echo $(find ${_searchPath} -regex "^.*json\|^.*yaml" -exec grep -l "BuildConfig\|\"ImageStream\"\|kind:.ImageStream$" '{}' \; | xargs | sed "s/\.\///g")
 }
 
 getComponentNameFromDir () {
