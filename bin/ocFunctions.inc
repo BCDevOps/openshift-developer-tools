@@ -279,7 +279,7 @@ isBuildConfig() {
     exit 1
   fi
 
-  _isBuildConfig=$( grep -l "BuildConfig\|\"ImageStream\"" ${_template} )
+  _isBuildConfig=$( grep -l "BuildConfig\|\"ImageStream\"\|kind:.ImageStream$" ${_template} )
   if [ -z "${_isBuildConfig}" ]; then
     return 1
   else
