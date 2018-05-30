@@ -218,6 +218,7 @@ if [ -z "${SETTINGS_LOADED}" ]; then
 
   # Build and deployment settings
   export DEPLOYMENT_CONFIG_SUFFIX="_DeploymentConfig.json"
+  export OVERRIDE_PARAM_SUFFIX="overrides.param"
 
   # ===========================================================================================================
 
