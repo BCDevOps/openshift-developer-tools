@@ -196,7 +196,7 @@ getParameterFileOutputPath () {
       _output=${_outputPrefix}/$( basename ${_outputFilename}.local.param )
       ;;
     *) # unrecognized option
-      echoError  "\ngetParameterFileOutputPath; Invalid type option\n"
+      echoError  "\ngetParameterFileOutputPath; Invalid type option.\n"
       ;;
   esac
 
@@ -231,7 +231,7 @@ generateParameterFilter (){
       _parameterFilters="${_parameterFilters}s~\(^MEMORY_LIMIT=\).*$~\10Mi~;"
       _parameterFilters="${_parameterFilters}s~\(^MEMORY_REQUEST=\).*$~\10Mi~;"
       _parameterFilters="${_parameterFilters}s~\(^CPU_LIMIT=\).*$~\10~;"
-      _parameterFilters="${_parameterFilters}s~\(^CPU_REQUEST=\).*$~\10~;"      
+      _parameterFilters="${_parameterFilters}s~\(^CPU_REQUEST=\).*$~\10~;"
       ;;
   esac
 
@@ -274,7 +274,7 @@ generateParameterFile (){
       echo -e "#=========================================================" > ${_output}
       echo -e "# OpenShift template parameters for:" >> ${_output}
       echo -e "# Component: ${_component}" >> ${_output}
-      echo -e "# JSON Template File: ${_template}" >> ${_output}
+      echo -e "# Template File: ${_template}" >> ${_output}
       echo -e "#=========================================================" >> ${_output}
       appendParametersToFile "${_template}" "${_output}" "${_commentFilter}" "${_parameterFilter}"
       exitOnError
@@ -312,7 +312,7 @@ for component in ${components}; do
   # Iterate through each file and generate the params files
   for file in ${_configTemplates}; do
     # Don't generate dev/test/prod param files for Build templates
-    TEMPLATE=${TEMPLATE_DIR}/${file}.json
+    TEMPLATE=${TEMPLATE_DIR}/${file}
     if isBuildConfig ${TEMPLATE}; then
       _isBuildConfig=1
     else
@@ -323,8 +323,8 @@ for component in ${components}; do
       # Don't create environment specific param files for Build Templates
       if ! skipParameterFileGeneration "${type}" "${_isBuildConfig}"; then
         _commentFilter=$(getParameterFileCommentFilter "${type}")
-        _output=$(getParameterFileOutputPath "${type}" "${file}")
-        _parameterFilter=$(generateParameterFilter "${component}" "${type}" "${file}")
+        _output=$(getParameterFileOutputPath "${type}" "$(getFilenameWithoutExt ${file})")
+        _parameterFilter=$(generateParameterFilter "${component}" "${type}" "$(getFilenameWithoutExt ${file})")
         generateParameterFile "${component}" "${TEMPLATE}" "${_output}" "${FORCE}" "${_commentFilter}" "${_parameterFilter}"
         exitOnError
       else

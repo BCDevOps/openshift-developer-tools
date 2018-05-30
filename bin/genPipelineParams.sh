@@ -18,7 +18,7 @@ usage() { #Usage function
     -l generate local params files - with all parameters commented out
     -p <profile> load a specific settings profile; setting.<profile>.sh
     -P Use the default settings profile; settings.sh.  Use this flag to ignore all but the default 
-       settings profile when there is more than one settings profile defined for a project.    
+       settings profile when there is more than one settings profile defined for a project.
     -x run the script in debug mode to see what's happening
 
     Update settings.sh and settings.local.sh files to set defaults
@@ -68,8 +68,8 @@ getLocalPipelineCommentFilter () {
   _commentFilter="s~^~#~;"
 
   # Uncomment the main local settings ...
-  _commentFilter="${_commentFilter}/SOURCE_REPOSITORY_URL/s~^#~~;"      
-  _commentFilter="${_commentFilter}/SOURCE_REPOSITORY_REF/s~^#~~;"      
+  _commentFilter="${_commentFilter}/SOURCE_REPOSITORY_URL/s~^#~~;"
+  _commentFilter="${_commentFilter}/SOURCE_REPOSITORY_REF/s~^#~~;"
   
   echo "sed ${_commentFilter}"  
 }
@@ -118,7 +118,7 @@ generatePipelineParameterFile (){
       echo -e "#=========================================================" > ${_output}
       echo -e "# OpenShift Jenkins pipeline template parameters for:" >> ${_output}
       echo -e "# Jenkinsfile: ${_jenkinsFile}" >> ${_output}
-      echo -e "# JSON Template File: ${_template}" >> ${_output}
+      echo -e "# Template File: ${_template}" >> ${_output}
       echo -e "#=========================================================" >> ${_output}
       appendParametersToFile "${_template}" "${_output}" "${_commentFilter}" "${_parameterFilter}"
       exitOnError

@@ -1,3 +1,5 @@
+#!/bin/bash
+
 getRelativeOutputDir () {
   # Assumes you are starting in the projects root openshift directory ...
   _openshiftDir=$(pwd -P)
@@ -200,11 +202,31 @@ getSecretFiles () {
 }
 
 getJenkinsFiles () {
- echo $(find . -name "*Jenkinsfile")
+  echo $(find . -name "*Jenkinsfile")
 }
 
 getConfigTemplates () {
- echo $(find . -name "*json" -exec grep -l "DeploymentConfig\|BuildConfig\|Route\|\"ImageStream\"" '{}' \; | sed "s/.json//" | xargs | sed "s/\.\///g")
+  echo $(find . -regex "^.*json\|^.*yaml" -exec grep -l "DeploymentConfig\|BuildConfig\|Route\|\"ImageStream\"\|kind:.ImageStream$" '{}' \; | xargs | sed "s/\.\///g")
+}
+
+getBuildTemplates () {
+  _searchPath=${1}
+   if [ -z "${_searchPath}" ]; then
+    echo -e \\n"getBuildTemplates; Missing parameter!"\\n
+    exit 1
+  fi
+
+  echo $(find ${_searchPath} -regex "^.*json\|^.*yaml" -exec grep -l "BuildConfig\|\"ImageStream\"\|kind:.ImageStream$" '{}' \; | xargs | sed "s/\.\///g")
+}
+
+getDeploymentTemplates () {
+  _searchPath=${1}
+   if [ -z "${_searchPath}" ]; then
+    echo -e \\n"getDeploymentTemplates; Missing parameter!"\\n
+    exit 1
+  fi
+
+  echo $(find ${_searchPath} -regex "^.*json\|^.*yaml" -exec grep -l "DeploymentConfig\|Route" '{}' \; | xargs | sed "s/\.\///g")
 }
 
 getComponentNameFromDir () {
@@ -257,7 +279,7 @@ isBuildConfig() {
     exit 1
   fi
 
-  _isBuildConfig=$( grep -l "BuildConfig\|\"ImageStream\"" ${_template} )
+  _isBuildConfig=$( grep -l "BuildConfig\|\"ImageStream\"\|kind:.ImageStream$" ${_template} )
   if [ -z "${_isBuildConfig}" ]; then
     return 1
   else

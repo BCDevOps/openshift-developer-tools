@@ -18,9 +18,9 @@ if [ ! -z "${DEBUG}" ]; then
 fi
 
 # Get list of JSON files - could be in multiple directories below
-pushd ${TEMPLATE_DIR} >/dev/null
-BUILDS=$(find . -name "*.json" -exec grep -l "BuildConfig\|\"ImageStream\"" '{}' \; | sed "s/.json//" | xargs | sed "s/\.\///g")
-popd >/dev/null
+if [ -d "${TEMPLATE_DIR}" ]; then
+  BUILDS=$(getBuildTemplates ${TEMPLATE_DIR})
+fi
 
 # Switch to Tools Project
 switchProject ${TOOLS}
@@ -32,18 +32,19 @@ LOCAL_PARAM_DIR=${PROJECT_OS_DIR}
 for build in ${BUILDS}; do
   echo -e \\n"Processing build configuration; ${build}..."
 
-  JSONFILE="${TEMPLATE_DIR}/${build}.json"
-  JSONTMPFILE=$( basename ${build}_BuildConfig.json )
+  _template="${build}"
+  _template_basename=$(getFilenameWithoutExt ${build})
+  _buildConfig="${_template_basename}_BuildConfig.json"
 
   if [ ! -z "${PROFILE}" ]; then
-    _paramFileName=$( basename ${build}.${PROFILE} )
+    _paramFileName="${_template_basename}.${PROFILE}"
   else
-    _paramFileName=$( basename ${build} )
+    _paramFileName="${_template_basename}"
   fi
 
-  PARAMFILE=$( basename ${_paramFileName}.param )
+  PARAMFILE="${_paramFileName}.param"
   if [ ! -z "${APPLY_LOCAL_SETTINGS}" ]; then
-    LOCALPARAM=${LOCAL_PARAM_DIR}/$( basename ${_paramFileName}.local.param )
+    LOCALPARAM="${LOCAL_PARAM_DIR}/${_paramFileName}.local.param"
   fi
 
   if [ -f "${PARAMFILE}" ]; then
@@ -58,15 +59,15 @@ for build in ${BUILDS}; do
     LOCALPARAM=""
   fi
 
-  oc process --filename=${JSONFILE} ${LOCALPARAM} ${PARAMFILE} > ${JSONTMPFILE}
+  oc process --filename=${_template} ${LOCALPARAM} ${PARAMFILE} > ${_buildConfig}
   exitOnError
   if [ -z ${GEN_ONLY} ]; then
-    oc ${OC_ACTION} -f ${JSONTMPFILE}
+    oc ${OC_ACTION} -f ${_buildConfig}
     exitOnError
   fi
 
   # Delete the tempfile if the keep command line option was not specified
   if [ -z "${KEEPJSON}" ]; then
-    rm ${JSONTMPFILE}
+    rm ${_buildConfig}
   fi
 done

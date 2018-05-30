@@ -2,6 +2,8 @@
 
 A set of scripts to help you configure and maintain your local and production OpenShift projects.
 
+Supports both json and yaml based OpenShift configuration templates.
+
 ## Environment Setup
 
 1. Clone this repository to your local machine.
