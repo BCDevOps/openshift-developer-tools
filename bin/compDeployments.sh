@@ -40,26 +40,27 @@ LOCAL_PARAM_DIR=${PROJECT_OS_DIR}
 generateConfigs() {
   # Get list of JSON files - could be in multiple directories below
   if [ -d "${TEMPLATE_DIR}" ]; then
-    DEPLOYS=$(find ${TEMPLATE_DIR} -name "*.json" -exec grep -l "DeploymentConfig\|Route" '{}' \; | sed "s/.json//" | xargs | sed "s/\.\///g")
+    DEPLOYS=$(getDeploymentTemplates ${TEMPLATE_DIR})
   fi
 
   for deploy in ${DEPLOYS}; do
     echo -e \\n\\n"Processing deployment configuration; ${deploy} ..."
 
-    JSONFILE="${deploy}.json"
-    JSONTMPFILE=$( basename ${deploy}${DEPLOYMENT_CONFIG_SUFFIX} )
-    PARAM_OVERRIDE_SCRIPT=$( basename ${deploy}.overrides.sh ) 
+    _template="${deploy}"
+    _template_basename=$(getFilenameWithoutExt ${deploy})
+    _deploymentConfig="${_template_basename}${DEPLOYMENT_CONFIG_SUFFIX}"
+    PARAM_OVERRIDE_SCRIPT="${_template_basename}.overrides.sh"
 
     if [ ! -z "${PROFILE}" ]; then
-      _paramFileName=$( basename ${deploy}.${PROFILE} )
+      _paramFileName="${_template_basename}.${PROFILE}"
     else
-      _paramFileName=$( basename ${deploy} )
+      _paramFileName="${_template_basename}"
     fi
 
-    PARAMFILE=$( basename ${_paramFileName}.param )
-    ENVPARAM=$( basename ${_paramFileName}.${DEPLOYMENT_ENV_NAME}.param )
+    PARAMFILE="${_paramFileName}.param"
+    ENVPARAM="${_paramFileName}.${DEPLOYMENT_ENV_NAME}.param"
     if [ ! -z "${APPLY_LOCAL_SETTINGS}" ]; then
-      LOCALPARAM=${LOCAL_PARAM_DIR}/$( basename ${_paramFileName}.local.param )
+      LOCALPARAM="${LOCAL_PARAM_DIR}/${_paramFileName}.local.param"
     fi
     
     if [ -f "${PARAMFILE}" ]; then
@@ -91,7 +92,7 @@ generateConfigs() {
       fi
     fi
 
-    oc process --filename=${JSONFILE} ${SPECIALDEPLOYPARM} ${LOCALPARAM} ${ENVPARAM} ${PARAMFILE} > ${JSONTMPFILE}
+    oc process --filename=${_template} ${SPECIALDEPLOYPARM} ${LOCALPARAM} ${ENVPARAM} ${PARAMFILE} > ${_deploymentConfig}
     exitOnError
     
     if [ ! -z "${SPECIALDEPLOYPARM}" ]; then

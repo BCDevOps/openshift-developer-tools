@@ -219,6 +219,16 @@ getBuildTemplates () {
   echo $(find ${_searchPath} -regex "^.*json\|^.*yaml" -exec grep -l "BuildConfig\|\"ImageStream\"\|kind:.ImageStream$" '{}' \; | xargs | sed "s/\.\///g")
 }
 
+getDeploymentTemplates () {
+  _searchPath=${1}
+   if [ -z "${_searchPath}" ]; then
+    echo -e \\n"getDeploymentTemplates; Missing parameter!"\\n
+    exit 1
+  fi
+
+  echo $(find ${_searchPath} -regex "^.*json\|^.*yaml" -exec grep -l "DeploymentConfig\|Route" '{}' \; | xargs | sed "s/\.\///g")
+}
+
 getComponentNameFromDir () {
   _componentDir=${1}
   if [ -z "${_componentDir}" ]; then
