@@ -42,6 +42,21 @@ printAndWait() {
   return 0
 }
 
+printAndAskToContinue() {
+  _msg=${@}
+  if [ -z "${_msg}" ]; then
+    echo -e \\n"printAndAskToContinue; Missing parameter!"\\n
+    exit 1
+  fi
+
+  echoWarning "\n${_msg}"
+  read -n1 -s -r -p $'\e[33mWould you like to continue?\e[0m  Press Ctrl-C to exit, or any other key to continue ...' key
+  echo -e \\n
+
+  # If we get here the user did NOT press Ctrl-C ...
+  return 0
+  }
+
 exitOnError() {
   rtnCd=$?
   if [ ${rtnCd} -ne 0 ]; then
@@ -603,6 +618,62 @@ dropAndRecreateDatabaseWithMigrations() {
 
     printAndWait "Wait for the ${_apiPodName} pod to completely start up and ensure it has finished running the database migrations before continuing."
   )
+}
+
+deleteAndRecreateDatabaseWithMigrations() {
+  (
+    # This function DELETES and recreates a PostgreSql database who's schema 
+    # is managed by migrations hosted on an API pod.
+    #
+    # The function is purposely wrapped in a subshell `(...)` to avoid variable name collisions.
+    _apiPodName=${1}
+    _dbPodName=${2}
+    if [ -z "${_apiPodName}" ] || [ -z "${_dbPodName}" ]; then
+      echo -e \\n"deleteAndRecreateDatabaseWithMigrations; Missing parameter!"\\n
+      exit 1
+    fi
+
+    scaleDown ${_apiPodName}
+    exitOnError
+
+    printAndWait "Wait for the ${_apiPodName} pod to completely shut down before continuing."
+
+    deletePostgreSqlDatabase ${_dbPodName}
+    exitOnError
+
+    scaleDown ${_dbPodName}
+    exitOnError
+
+    printAndWait "Wait for the ${_dbPodName} pod to completely shut down before continuing."
+
+    scaleUp ${_dbPodName}
+    exitOnError
+
+    printAndWait "Wait for the ${_dbPodName} pod to completely start up before continuing."
+
+    scaleUp ${_apiPodName}
+    exitOnError
+
+    printAndWait "Wait for the ${_apiPodName} pod to completely start up and ensure it has finished running the database migrations before continuing."
+  )
+}
+
+deletePostgreSqlDatabase() {
+  # This function deletes a PostgreSql database on a remote pod.
+  # You must specify the friendly name of the pod hosting the database.
+  # The associated database infomration including Database Name and Username
+  # are assumed to exist on the pod in environment variables; ${POSTGRESQL_DATABASE} and ${POSTGRESQL_USER}.
+  _databasePodName=${1}
+  _dataDirectory=${2:-"/var/lib/pgsql/data/userdata"}
+  if [ -z "${_databasePodName}" ]; then
+    echo -e \\n"dropAndRecreatePostgreSqlDatabase; Missing parameter!"\\n
+    exit 1
+  fi
+
+  echo "============================================================================="
+  echo "Deleting the database ..."
+  echo "-----------------------------------------------------------------------------"
+  deleteFromPod "${_databasePodName}" "${_dataDirectory}"
 }
 # =================================================================================================================
 
