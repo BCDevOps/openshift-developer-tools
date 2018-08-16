@@ -61,7 +61,7 @@ if [ -z "${OPENSHIFT_REGISTRY_ADDRESS}" ]; then
   OPENSHIFT_REGISTRY_ADDRESS=docker-registry.pathfinder.gov.bc.ca
 fi
 
-OPENSHIFT_IMAGE_SNIPPET=${DOCKER_IMAGE#*/}
+OPENSHIFT_IMAGE_SNIPPET=${DOCKER_IMAGE##*/}
 OPENSHIFT_IMAGESTREAM_PATH=${OPENSHIFT_REGISTRY_ADDRESS}/${OPENSHIFT_NAMESPACE}/${OPENSHIFT_IMAGE_SNIPPET}
 # =================================================================================================================
 
