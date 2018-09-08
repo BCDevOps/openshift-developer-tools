@@ -551,6 +551,16 @@ runInContainer() {
   fi
 }
 
+isInstalled(){
+  rtnVal=$(type "$1" >/dev/null 2>&1)
+  rtnCd=$?
+  if [ ${rtnCd} -ne 0 ]; then
+    return 1
+  else
+    return 0
+  fi
+}
+
 # =================================================================================================================
 # Database Managment Functions:
 # -----------------------------------------------------------------------------------------------------------------
@@ -666,7 +676,7 @@ deletePostgreSqlDatabase() {
   _databasePodName=${1}
   _dataDirectory=${2:-"/var/lib/pgsql/data/userdata"}
   if [ -z "${_databasePodName}" ]; then
-    echo -e \\n"dropAndRecreatePostgreSqlDatabase; Missing parameter!"\\n
+    echo -e \\n"deletePostgreSqlDatabase; Missing parameter!"\\n
     exit 1
   fi
 

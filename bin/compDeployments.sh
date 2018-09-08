@@ -25,15 +25,36 @@ if [ -f ${OCTOOLSBIN}/ocFunctions.inc ]; then
   . ${OCTOOLSBIN}/ocFunctions.inc
 fi
 
+# Check for dependancies
+JQ_EXE=jq
+if ! isInstalled ${JQ_EXE}; then
+    echoWarning "The ${JQ_EXE} executable is required and was not found on your path."
+
+  cat <<-EOF
+	The recommended approach to installing the required package(s) is to use either [Homebrew](https://brew.sh/) (MAC) 
+  or [Chocolatey](https://chocolatey.org/) (Windows).
+
+  Windows:
+    - chocolatey install jq
+
+  MAC:
+    - brew install jq
+
+EOF
+    exit 1
+fi
+
 # Turn on debugging if asked
 if [ ! -z "${DEBUG}" ]; then
   set -x
 fi
+
 # -----------------------------------------------------------------------------------------------------------------
 # Configuration:
 # -----------------------------------------------------------------------------------------------------------------
 # Local params file path MUST be relative...Hack!
 LOCAL_PARAM_DIR=${PROJECT_OS_DIR}
+
 # -----------------------------------------------------------------------------------------------------------------
 # Functions:
 # -----------------------------------------------------------------------------------------------------------------
@@ -92,9 +113,20 @@ generateConfigs() {
       fi
     fi
 
-    oc process --filename=${_template} ${SPECIALDEPLOYPARM} ${LOCALPARAM} ${ENVPARAM} ${PARAMFILE} > ${_deploymentConfig}
-    exitOnError
-    
+    if [ ${OC_ACTION} = "replace" ]; then
+      echoWarning "Preparing deployment configuration for update/replace, removing any 'Secret' objects so existing values are left untouched ..."
+      oc process --filename=${_template} ${SPECIALDEPLOYPARM} ${LOCALPARAM} ${ENVPARAM} ${PARAMFILE} \
+      | jq 'del(.items[] | select(.kind== "Secret"))' \
+      > ${_deploymentConfig}
+      exitOnError
+    elif [ ${OC_ACTION} = "create" ]; then
+      oc process --filename=${_template} ${SPECIALDEPLOYPARM} ${LOCALPARAM} ${ENVPARAM} ${PARAMFILE} > ${_deploymentConfig}
+      exitOnError
+    else
+      echoError "\nUnrecognized OC_ACTION, ${OC_ACTION}.  Unable to process template.\n"
+      exit 1
+    fi
+  
     if [ ! -z "${SPECIALDEPLOYPARM}" ]; then
       unset SPECIALDEPLOYPARM
     fi      
