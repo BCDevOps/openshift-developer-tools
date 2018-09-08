@@ -7,12 +7,17 @@ Supports both json and yaml based OpenShift configuration templates.
 ## Environment Setup
 
 1. Clone this repository to your local machine.
+1. Install [jq](https://stedolan.github.io/jq/).  [jq](https://stedolan.github.io/jq/) is used by some of the scripts to manipulate the configuration files in preparation for update/replace operations.  The recommended approach is to use either [Homebrew](https://brew.sh/) (MAC) or [Chocolatey](https://chocolatey.org/) (Windows) to install the required packages.
+      - Windows:
+        - `chocolatey install jq`
+      - MAC:
+        - `brew install jq`
 1. Update your path to include a reference to the `bin` directory
 
-Using GIT Bash on Windows as an example;
-1. Create a `.bashrc` file in your home directory (`C:\Users\<UserName/>`, for example `C:\Users\Wade`).
-1. Add the line `PATH=${PATH}:/c/openshift-project-tools/bin`
-1. Restart GIT Bash.  _If you have not done this before, GIT will write out some warnings and create some files for you that fix the issues._
+    Using GIT Bash on Windows as an example;
+    1. Create a `.bashrc` file in your home directory (`C:\Users\<UserName/>`, for example `C:\Users\Wade`).
+    1. Add the line `PATH=${PATH}:/c/openshift-project-tools/bin`
+    1. Restart GIT Bash.  _If you have not done this before, GIT will write out some warnings and create some files for you that fix the issues._
 
 All of the scripts will be available on the path and can be run from any directory.  This is important as many of the scripts expect to be run from the top level `./openshift` directory you will create in your project.
 
