@@ -397,10 +397,25 @@ runInContainerInteractively() {
   oc exec -i "${_podInstanceName}" -- bash -c "${_command}"
 }
 
+recyclePods() {
+  _pods=${@}
+  if [ -z "${_pods}" ]; then
+    echo -e \\n"recyclePods; Missing parameter!  You must specify the name of at least one pod."\\n
+    exit 1
+  fi
+
+  switchProject
+  exitOnError
+
+  scaleDown ${_pods}
+  printAndWait "Wait for all of the pods (${_pods}) to scale down completely before continuing."
+  scaleUp ${_pods}
+}
+
 scaleUp() {
   _pods=${@}
   if [ -z "${_pods}" ]; then
-    echo -e \\n"scaleUp; Missing parameter!"\\n
+    echo -e \\n"scaleUp; Missing parameter!  You must specify the name of at least one pod."\\n
     exit 1
   fi
 
@@ -412,7 +427,7 @@ scaleUp() {
 scaleDown() {
   _pods=${@}
   if [ -z "${_pods}" ]; then
-    echo -e \\n"scaleDown; Missing parameter!"\\n
+    echo -e \\n"scaleDown; Missing parameter!  You must specify the name of at least one pod."\\n
     exit 1
   fi
 
@@ -425,7 +440,7 @@ scaleDeployment() {
   _deplymentConfigName=${1}
   _numReplicas=${2:-0}
   if [ -z "${_deplymentConfigName}" ] || [ -z "${_numReplicas}" ]; then
-    echo -e \\n"scaleDeployment; Missing parameter!"\\n
+    echo -e \\n"scaleDeployment; Missing parameter!  You must specify the name of at least one pod."\\n
     exit 1
   fi
 
@@ -692,6 +707,21 @@ deletePostgreSqlDatabase() {
 # -----------------------------------------------------------------------------------------------------------------
 # You need to supply your own getLedgerAddress implementation.
 # -----------------------------------------------------------------------------------------------------------------
+deleteWallets() {
+  _podNames=${@}
+  if [ -z "${_podNames}" ]; then
+    echo -e \\n"deleteWallets; Missing parameter!  You must specify the name of at least one pod."\\n
+    exit 1
+  fi
+
+  printAndAskToContinue "If you contiune the wallets from ${_podNames} will be deleted.  All data will be lost."
+
+  switchProject
+  exitOnError
+
+  deleteFromPods "/home/indy/.indy_client/wallet/*" ${_podNames}
+}
+
 registerDids() {
   _names=${@}
   if [ -z "${_names}" ]; then
