@@ -378,25 +378,6 @@ getPipelineName (){
   echo $(echo ${_pipelineName} | tr '[:upper:]' '[:lower:]')
 }
 
-runInContainerInteractively() {
-  _podName=${1}
-  _command=${2:-echo Hello}
-  if [ -z "${_podName}" ] || [ -z "${_command}" ]; then
-    echo -e \\n"runInContainerInteractively; Missing parameter!"\\n
-    exit 1
-  fi
-
-  _podInstanceName=$(getPodByName.sh ${_podName})
-  exitOnError
-
-  echo
-  echo "Executing command on ${_podInstanceName}:"
-  echo -e "\t${_command}"
-  echo
-
-  oc exec -i "${_podInstanceName}" -- bash -c "${_command}"
-}
-
 recyclePods() {
   _pods=${@}
   if [ -z "${_pods}" ]; then
@@ -566,6 +547,25 @@ runInContainer() {
   fi
 }
 
+runInContainerInteractively() {
+  _podName=${1}
+  _command=${2:-echo Hello}
+  if [ -z "${_podName}" ] || [ -z "${_command}" ]; then
+    echo -e \\n"runInContainerInteractively; Missing parameter!"\\n
+    exit 1
+  fi
+
+  _podInstanceName=$(getPodByName.sh ${_podName})
+  exitOnError
+
+  echo
+  echo "Executing command on ${_podInstanceName}:"
+  echo -e "\t${_command}"
+  echo
+
+  oc exec -i "${_podInstanceName}" -- bash -c "${_command}"
+}
+
 isInstalled(){
   rtnVal=$(type "$1" >/dev/null 2>&1)
   rtnCd=$?
@@ -680,6 +680,33 @@ deleteAndRecreateDatabaseWithMigrations() {
     exitOnError
 
     printAndWait "Wait for the ${_apiPodName} pod to completely start up and ensure it has finished running the database migrations before continuing."
+  )
+}
+
+deleteAndRecreateDatabase() {
+  (
+    # This function DELETES and recreates a PostgreSql database who's schema 
+    # is managed by migrations hosted on some other pod.
+    #
+    # The function is purposely wrapped in a subshell `(...)` to avoid variable name collisions.
+    _dbPodName=${1}
+    if [ -z "${_dbPodName}" ]; then
+      echo -e \\n"deleteAndRecreateDatabase; Missing parameter!"\\n
+      exit 1
+    fi
+
+    deletePostgreSqlDatabase ${_dbPodName}
+    exitOnError
+
+    scaleDown ${_dbPodName}
+    exitOnError
+
+    printAndWait "Wait for the ${_dbPodName} pod to completely shut down before continuing."
+
+    scaleUp ${_dbPodName}
+    exitOnError
+
+    printAndWait "Wait for the ${_dbPodName} pod to completely start up before continuing."
   )
 }
 
