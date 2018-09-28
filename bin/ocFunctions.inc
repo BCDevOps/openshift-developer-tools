@@ -93,6 +93,27 @@ projectExists (){
   fi
 }
 
+podExists (){
+  (
+    _podName=${1}
+    _podIndex=${2:-0}
+    if [ -z "${_podName}" ]; then
+      echo -e \\n"podExists; Missing parameter!"\\n
+      exit 1
+    fi
+
+    # Get name of a currently deployed pod by label and index
+    _podInstanceName=$(getPodByName.sh ${_podName} ${_podIndex})
+    if [ ! -z "${_podInstanceName}" ]; then
+      # The pod exists ...
+      return 0
+    else
+      # The pod does not exist ...
+      return 1
+    fi
+  )
+}
+
 assignRole (){
   role=$1
   user=$2
