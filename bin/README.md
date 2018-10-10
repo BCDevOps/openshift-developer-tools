@@ -28,13 +28,22 @@ These scripts use `sed` and regular expression processing.  The default version 
 Please install `gnu-sed`.
 
 Using [Homebrew](https://brew.sh):
+
 ```
 brew install gnu-sed --with-default-names
+```
+
+Similarly, you must install GNU find:
+
+```
+brew install findutils --with-default-names
 ```
 
 Also make sure `usr/local/bin` is at a higher priority on your **PATH** than `usr/bin`.  This will ensure that packages installed by Homebrew override system binaries; in this case `sed`.
 
 `brew doctor` can help diagnose such issues.
+
+
 
 ## Project Structure
 

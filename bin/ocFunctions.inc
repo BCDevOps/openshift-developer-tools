@@ -242,7 +242,7 @@ getJenkinsFiles () {
 }
 
 getConfigTemplates () {
-  echo $(find . -regex "^.*json\|^.*yaml" -exec grep -l "DeploymentConfig\|BuildConfig\|Route\|\"ImageStream\"\|kind:.ImageStream$" '{}' \; | xargs | sed "s/\.\///g")
+  echo $(find . -regex "^.*\.\(json\|yaml\|yml\)" -exec grep -l "DeploymentConfig\|BuildConfig\|Route\|\"ImageStream\"\|kind:.ImageStream$" '{}' \; | xargs | sed "s/\.\///g")
 }
 
 getBuildTemplates () {
@@ -252,7 +252,7 @@ getBuildTemplates () {
     exit 1
   fi
 
-  echo $(find ${_searchPath} -regex "^.*json\|^.*yaml" -exec grep -l "BuildConfig\|\"ImageStream\"\|kind:.ImageStream$" '{}' \; | xargs | sed "s/\.\///g")
+  echo $(find ${_searchPath} -regex "^.*\.\(json\|yaml\|yml\)" -exec grep -l "BuildConfig\|\"ImageStream\"\|kind:.ImageStream$" '{}' \; | xargs | sed "s/\.\///g")
 }
 
 getDeploymentTemplates () {
@@ -262,7 +262,7 @@ getDeploymentTemplates () {
     exit 1
   fi
 
-  echo $(find ${_searchPath} -regex "^.*json\|^.*yaml" -exec grep -l "DeploymentConfig\|Route" '{}' \; | xargs | sed "s/\.\///g")
+  echo $(find ${_searchPath} -regex "^.*\.\(json\|yaml\|yml\)" -exec grep -l "DeploymentConfig\|Route" '{}' \; | xargs | sed "s/\.\///g")
 }
 
 getComponentNameFromDir () {
