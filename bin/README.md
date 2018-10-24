@@ -210,7 +210,7 @@ Edit these files as needed for your project.
 Run the following script to generate a series of files with the extension ".local.param" in the "openshift" folder in the root of the repository:
 
 ```
-genParams -l
+genParams.sh -l
 ```
 
 The files have all the parameters from the various templates in the project, with all of the parameters initially set to be commented out.
