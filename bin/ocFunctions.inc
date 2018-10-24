@@ -175,22 +175,22 @@ appendParametersToFile (){
   fi
   IFS=$OIFS  
 
-  # Fancy sed handling below to convert parameters output to param file format
+  # Fancy sed/awk handling below to convert parameters command-line output to param file format
   # - Delete the first line of the oc process output
-  # - Put "XXXX" in front of the parameter default value
-  # - Remove all whitespace before the XXXX and change XXXX to =
+  # - Use awk to split output into "columns"; then print out the FIRST and LAST column with '=' in between
   # - Use _commentFilter to add (or not) a "#" in front of each line; "#" comments it out the line
   #  - i.e. set _commentFilter="sed s/^/#/" to comment out the line
 
-  # 1. Remove the headers (the first line) from the file.
-  # 2. Place 'XXXX' in front of the start of the value column
-  # 3. Starting with the first instance of whitespace (RegEx, `\s`), replace ALL of the text between the Key and the Value with '='.
-  #    Having the 'XXXX' helps us set the bounds of the replacement.
+  # 1. Remove the headers (the first line) from the output.
+  # 2. Split the output into columns, where columns are separated by TWO or more spaces
+  #    Having the separator be two consecutive spaces (or more) helps us properly capture values with a SINGLE space in the value column.
+  # 3. Starting with the first column, print out the FIRST and LAST column with the following format: FIRST_COLUMN=LAST_COLUMN
+  #    This maps to the param file format: Param_Key=Param_Value
   # 4. + Apply additional filters to the parameters
+  # 5. Finally, append the resulting output to the parameter file defined in "${_outputPath}"
   oc process --parameters --filename=${_template} | \
     sed '1d' | \
-    sed 's~\([^ ]*$\)~XXXX\1~' | \
-    sed 's~\s.*XXXX~=~' | \
+    awk -F'[ ]{2,}' '{ print $1 "=" $NF }' | \
     sed 's~\(^GITHUB_WEBHOOK_SECRET=.*$\)~#\1~' | \
     sed 's~\(^DJANGO_SECRET_KEY=.*$\)~#\1~' | \
     ${_gitUrlFilter} | \
