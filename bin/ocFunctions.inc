@@ -115,13 +115,20 @@ podExists (){
 }
 
 assignRole (){
-  role=$1
-  user=$2
-  project=$3
+  (
+    role=$1
+    user=$2
+    project=$3
 
-  echo "Assigning role [${role}], to user [${user}], in project [${project}] ..."
-  oc policy add-role-to-user ${role} ${user} -n ${project}
-  echo
+    if [ -z "${role}" ] || [ -z "${user}" ] || [ -z "${project}" ]; then
+      echo -e \\n"assignRole; Missing parameter!"\\n
+      exit 1
+    fi
+
+    echo "Assigning role [${role}], to user [${user}], in project [${project}] ..."
+    oc policy add-role-to-user ${role} ${user} -n ${project}
+    echo
+  )
 }
 
 getDirectory () {
