@@ -1,4 +1,5 @@
 #!/bin/bash
+
 OCTOOLSBIN=$(dirname $0)
 
 # =================================================================================================================
@@ -12,7 +13,7 @@ usage() {
 
   OPTIONS:
   ========
-    -r the role to assign; typically on of `view`, `edit`, or `admin`
+    -r the role to assign; typically on of 'view', 'edit', or 'admin'
     -u the user to which the role is to be assigned
     -f read the project list from a file
     -h prints the usage for the script
