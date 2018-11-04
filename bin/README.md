@@ -12,6 +12,11 @@ Supports both json and yaml based OpenShift configuration templates.
         - `chocolatey install jq`
       - MAC:
         - `brew install jq`
+      - CentOS:
+        - `yum install jq`
+      - Debian/Ubuntu:
+        - `apt install jq`
+
 1. Update your path to include a reference to the `bin` directory
 
     Using GIT Bash on Windows as an example;
