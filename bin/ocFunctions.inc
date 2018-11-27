@@ -413,9 +413,6 @@ recyclePods() {
     exit 1
   fi
 
-  switchProject
-  exitOnError
-
   scaleDown ${_pods}
   printAndWait "Wait for all of the pods (${_pods}) to scale down completely before continuing."
   scaleUp ${_pods}
@@ -446,14 +443,17 @@ scaleDown() {
 }
 
 scaleDeployment() {
-  _deplymentConfigName=${1}
-  _numReplicas=${2:-0}
-  if [ -z "${_deplymentConfigName}" ] || [ -z "${_numReplicas}" ]; then
-    echo -e \\n"scaleDeployment; Missing parameter!  You must specify the name of at least one pod."\\n
-    exit 1
-  fi
+  (
+    _deplymentConfigName=${1}
+    _numReplicas=${2:-0}
+    _namespace=$(getProjectName)
+    if [ -z "${_deplymentConfigName}" ] || [ -z "${_numReplicas}" ]; then
+      echo -e \\n"scaleDeployment; Missing parameter!  You must specify the name of at least one pod."\\n
+      exit 1
+    fi
 
-  oc scale --replicas=${_numReplicas} dc ${_deplymentConfigName}
+    oc scale -n ${_namespace} --replicas=${_numReplicas} dc ${_deplymentConfigName}
+  )
 }
 
 deleteFromPods() {
@@ -482,8 +482,13 @@ deleteFromPod() {
   runInContainer -v "${_podName}" "${_cmd}"
 }
 
-switchProject() {
+getProjectName() {
   _projectName=${1:-${PROJECT_NAMESPACE}-${DEPLOYMENT_ENV_NAME}}
+  echo "${_projectName}"
+}
+
+switchProject() {
+  _projectName=$(getProjectName)
   echo "Switching to ${_projectName} ..."
   oc project ${_projectName} >/dev/null
 }
