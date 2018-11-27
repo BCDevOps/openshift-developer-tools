@@ -488,7 +488,7 @@ getProjectName() {
 }
 
 switchProject() {
-  _projectName=$(getProjectName)
+  _projectName=$(getProjectName ${1})
   echo "Switching to ${_projectName} ..."
   oc project ${_projectName} >/dev/null
 }
