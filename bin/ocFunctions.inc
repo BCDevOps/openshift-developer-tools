@@ -103,7 +103,7 @@ podExists (){
     fi
 
     # Get name of a currently deployed pod by label and index
-    _podInstanceName=$(getPodByName.sh ${_podName} ${_podIndex})
+    _podInstanceName=$(getPodByName ${_podName} ${_podIndex})
     if [ ! -z "${_podInstanceName}" ]; then
       # The pod exists ...
       return 0
@@ -413,9 +413,6 @@ recyclePods() {
     exit 1
   fi
 
-  switchProject
-  exitOnError
-
   scaleDown ${_pods}
   printAndWait "Wait for all of the pods (${_pods}) to scale down completely before continuing."
   scaleUp ${_pods}
@@ -446,14 +443,17 @@ scaleDown() {
 }
 
 scaleDeployment() {
-  _deplymentConfigName=${1}
-  _numReplicas=${2:-0}
-  if [ -z "${_deplymentConfigName}" ] || [ -z "${_numReplicas}" ]; then
-    echo -e \\n"scaleDeployment; Missing parameter!  You must specify the name of at least one pod."\\n
-    exit 1
-  fi
+  (
+    _deplymentConfigName=${1}
+    _numReplicas=${2:-0}
+    _namespace=$(getProjectName)
+    if [ -z "${_deplymentConfigName}" ] || [ -z "${_numReplicas}" ]; then
+      echo -e \\n"scaleDeployment; Missing parameter!  You must specify the name of at least one pod."\\n
+      exit 1
+    fi
 
-  oc scale --replicas=${_numReplicas} dc ${_deplymentConfigName}
+    oc scale -n ${_namespace} --replicas=${_numReplicas} dc ${_deplymentConfigName}
+  )
 }
 
 deleteFromPods() {
@@ -479,11 +479,16 @@ deleteFromPod() {
     exit 1
   fi
 
-  runInContainer.sh "${_podName}" "${_cmd}"
+  runInContainer -v "${_podName}" "${_cmd}"
+}
+
+getProjectName() {
+  _projectName=${1:-${PROJECT_NAMESPACE}-${DEPLOYMENT_ENV_NAME}}
+  echo "${_projectName}"
 }
 
 switchProject() {
-  _projectName=${1:-${PROJECT_NAMESPACE}-${DEPLOYMENT_ENV_NAME}}
+  _projectName=$(getProjectName)
   echo "Switching to ${_projectName} ..."
   oc project ${_projectName} >/dev/null
 }
@@ -558,21 +563,42 @@ deployConfigs() {
   done
 }
 
+# =================================================================================================================
+# runInContainer
+# - Running with the '-v' switch provides additional log output.
+# -----------------------------------------------------------------------------------------------------------------
 runInContainer() {
-  # This is a quite version of runInContainer.sh
-  _podName=${1}
-  _command=${2}
-  _podIndex=${3:-0}
-  if [ -z "${_podName}" ] || [ -z "${_command}" ]; then
-    echo -e \\n"runInContainer; Missing parameter!"\\n
-    exit 1
-  fi
+  (
+    local OPTIND
+    while getopts v FLAG; do
+      case $FLAG in
+        v ) _verbose=1 ;;
+      esac
+    done
+    shift $((OPTIND-1))
 
-  # Get name of a currently deployed pod by label and index
-  _podInstanceName=$(getPodByName.sh "${_podName}" "${_podIndex}")
-  if [ ! -z "${_podInstanceName}" ]; then
-    oc exec "${_podInstanceName}" -- bash -c "${_command:-echo Hello}"
-  fi
+    _podName=${1}
+    _command=${2}
+    _podIndex=${3:-0}
+    if [ -z "${_podName}" ] || [ -z "${_command}" ]; then
+      echo -e \\n"runInContainer; Missing parameter!"\\n
+      exit 1
+    fi
+
+    # Get name of a currently deployed pod by label and index
+    _podInstanceName=$(getPodByName "${_podName}" "${_podIndex}")
+    if [ ! -z "${_podInstanceName}" ]; then
+      if [ ! -z "${_verbose}" ]; then
+        echo -e "\nExecuting command on ${_podInstanceName}:"
+        echo -e "\t${_command}\n"
+      fi
+      oc exec "${_podInstanceName}" -- bash -c "${_command:-echo Hello}"
+    else
+      if [ ! -z "${_verbose}" ]; then
+        echo -e "\nrunInContainer; ${_podInstanceName} not found.\n"
+      fi
+    fi
+  )
 }
 
 runInContainerInteractively() {
@@ -583,7 +609,7 @@ runInContainerInteractively() {
     exit 1
   fi
 
-  _podInstanceName=$(getPodByName.sh ${_podName})
+  _podInstanceName=$(getPodByName ${_podName})
   exitOnError
 
   echo
@@ -605,6 +631,45 @@ isInstalled(){
 }
 
 # =================================================================================================================
+# getPodByName
+# - The eventual replacement for the discrete getPodByName.sh script
+# -----------------------------------------------------------------------------------------------------------------
+getPodByName() {
+  (
+    _podName=${1}
+    _podIndex=${2:-0}
+    if [ -z "${_podName}" ] ; then
+      echo -e \\n"getPodByName; Missing parameter!"\\n
+      exit 1
+    fi
+
+    _podInstanceName=$(getPodNameByLabel "${_podName}" "name" "${_podIndex}")
+    if [ -z "${_podInstanceName}" ] ; then
+      _podInstanceName=$(getPodNameByLabel "${_podName}" "app" "${_podIndex}")
+    fi
+
+    echo ${_podInstanceName}
+  )
+}
+
+getPodNameByLabel() {
+  (
+    _podName=${1}
+    _label=${2:-name}
+    _podIndex=${3:-0}
+    if [ -z "${_podName}" ] ; then
+      echo -e \\n"getPodNameByLabel; Missing parameter!"\\n
+      exit 1
+    fi
+
+    _podInstanceName=$(oc get pods -l "${_label}=${_podName}" --template "{{ with index .items ${_podIndex} }}{{ .metadata.name }}{{ end }}" --ignore-not-found)
+    echo ${_podInstanceName}
+  )
+}
+# =================================================================================================================
+
+
+# =================================================================================================================
 # Database Managment Functions:
 # -----------------------------------------------------------------------------------------------------------------
 dropAndRecreatePostgreSqlDatabase() {
@@ -621,15 +686,15 @@ dropAndRecreatePostgreSqlDatabase() {
   echo "============================================================================="
   echo "Recreating database ..."
   echo "-----------------------------------------------------------------------------"
-  runInContainer.sh \
+  runInContainer -v \
   ${_databasePodName} \
   'psql -ac "DROP DATABASE \"${POSTGRESQL_DATABASE}\";"'
 
-  runInContainer.sh \
+  runInContainer -v \
   ${_databasePodName} \
   'psql -ac "CREATE DATABASE \"${POSTGRESQL_DATABASE}\";"'
 
-  runInContainer.sh \
+  runInContainer -v \
   ${_databasePodName} \
   'psql -ac "GRANT ALL ON DATABASE \"${POSTGRESQL_DATABASE}\" TO \"${POSTGRESQL_USER}\";"'
   echo "============================================================================"
@@ -638,7 +703,7 @@ dropAndRecreatePostgreSqlDatabase() {
   echo "============================================================================="
   echo "Listing databases ..."
   echo "-----------------------------------------------------------------------------"
-  runInContainer.sh \
+  runInContainer -v \
   ${_databasePodName} \
   'psql -c "\l"'
   echo "============================================================================"
