@@ -592,7 +592,7 @@ runInContainer() {
         echo -e "\nExecuting command on ${_podInstanceName}:"
         echo -e "\t${_command}\n"
       fi
-      oc exec "${_podInstanceName}" -- bash -c "${_command:-echo Hello}"
+      oc exec "${_podInstanceName}" -n $(getProjectName) -- bash -c "${_command:-echo Hello}"
     else
       if [ ! -z "${_verbose}" ]; then
         echoWarning "\nrunInContainer; a running instance of ${_podName} was not found.\n"
@@ -662,7 +662,7 @@ getPodNameByLabel() {
       exit 1
     fi
 
-    _podInstanceName=$(oc get pods -l "${_label}=${_podName}" --template "{{ with index .items ${_podIndex} }}{{ .metadata.name }}{{ end }}" --ignore-not-found)
+    _podInstanceName=$(oc get pods -n $(getProjectName) -l "${_label}=${_podName}" --template "{{ with index .items ${_podIndex} }}{{ .metadata.name }}{{ end }}" --ignore-not-found)
     echo ${_podInstanceName}
   )
 }
