@@ -595,7 +595,7 @@ runInContainer() {
       oc exec "${_podInstanceName}" -- bash -c "${_command:-echo Hello}"
     else
       if [ ! -z "${_verbose}" ]; then
-        echo -e "\nrunInContainer; ${_podInstanceName} not found.\n"
+        echoWarning "\nrunInContainer; a running instance of ${_podName} was not found.\n"
       fi
     fi
   )
