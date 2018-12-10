@@ -3,12 +3,12 @@
 getRelativeOutputDir () {
   # Assumes you are starting in the projects root openshift directory ...
   _openshiftDir=$(pwd -P)
-  
+
   # Switch to the project directory, which should be up one directory level ...
   pushd ${PROJECT_DIR} >/dev/null
   _projectDir=$(pwd -P)
   popd >/dev/null
-  
+
   _relativeOutputDir=$(echo ${_openshiftDir} | sed "s~${_projectDir}~.~")
   echo ${_relativeOutputDir}
 }
@@ -164,10 +164,10 @@ appendParametersToFile (){
   _gitUrlFilter=cat
   _gitRefFilter=cat
   _templateName=$(basename ${_template})
-  
+
   OIFS=$IFS
   IFS=" "
-  _skip_git_overrides_array=(${skip_git_overrides}) 
+  _skip_git_overrides_array=(${skip_git_overrides})
   if ! contains "${_templateName}" "${_skip_git_overrides_array[@]}"; then
     # Override the GIT URI if it is defined ...
     if [ ! -z "${GIT_URI}" ]; then
@@ -180,7 +180,7 @@ appendParametersToFile (){
       _gitRefFilter="sed s~\(^\(GIT_REF\|SOURCE_REPOSITORY_REF\)=\).*$~\1${GIT_REF}~"
     fi
   fi
-  IFS=$OIFS  
+  IFS=$OIFS
 
   # Fancy sed/awk handling below to convert parameters command-line output to param file format
   # - Delete the first line of the oc process output
@@ -220,7 +220,7 @@ getFilenameWithoutExt()
     echo -e \\n"getFilenameWithoutExt; Missing parameter!"\\n
     exit 1
   fi
-  
+
   _filename=$(basename ${_path})
   _name=${_filename%.*}
   echo ${_name}
@@ -232,12 +232,12 @@ getSecretFiles () {
     echo -e \\n"getSecretFiles; Missing parameter!"\\n
     exit 1
   fi
-  
+
   # The related files should be in a 'secret' folder under the openshift directory with the same name as the temaple.
   # For example:
   # Template = ./openshift/templates/server/server-secret.json
   # Secrets = ./openshift/secrets/server-secret/*
-  
+
   # Find all of the secrets associated with the template ...
   _name=$(getFilenameWithoutExt ${_secretTemplate})
   _searchPattern="*/secrets/${_name}/*"
@@ -427,7 +427,7 @@ scaleUp() {
 
   for _pod in ${_pods}; do
     scaleDeployment ${_pod} 1
-  done  
+  done
 }
 
 scaleDown() {
@@ -439,7 +439,7 @@ scaleDown() {
 
   for _pod in ${_pods}; do
     scaleDeployment ${_pod}
-  done  
+  done
 }
 
 scaleDeployment() {
@@ -503,7 +503,7 @@ getAllPods() {
     echo "${_pods}"
   else
     oc get dc | awk '{if(NR>1)print $1}'
-  fi  
+  fi
 }
 
 removeFromList() {
@@ -516,7 +516,7 @@ removeFromList() {
 
   for _item in ${_remove}; do
     _list=$(echo ${_list} | sed "s~[[:space:]]\+${_item}[[:space:]]\+~ ~g")
-  done  
+  done
 
   echo ${_list}
 }
@@ -668,6 +668,80 @@ getPodNameByLabel() {
 }
 # =================================================================================================================
 
+readConf(){
+  (
+    configFile=${1}
+    if [ -f ${configFile} ]; then
+      # Read in the config minus any comments ...
+      echo -e \\n"Reading config from ${configFile} ..." >&2
+      _value=$(sed '/^[[:blank:]]*#/d;s/#.*//' ${configFile})
+    fi
+
+    echo "${_value}"
+  )
+}
+
+readIntoSingleLine() {
+  (
+    path=${1}
+    if [ ! -f ${path} ]; then
+      echo -e \\n"readIntoSingleLine - Unable to locate file - ${path}"\\n
+      exit 1
+    fi
+
+    singleLine=$(sed ':a;N;$!ba;s/\n/\\n/g' ${path})
+    echo ${singleLine}
+  )
+}
+
+ROUTE_CERTIFICATE_PATCH_TEMPLATE='{\"spec\": {\"tls\": {\"certificate\": \"${certificate}\",\"key\": \"${privateKey}\"}}}'
+getCertificatePatch() {
+  (
+    certPath=${1}
+    pkPath=${2}
+    if [ ! -f ${certPath} ]  || [ ! -f ${pkPath} ]; then
+      echo -e \\n"getCertificatePatch; Unable to locate one of the required files!"\\n
+      exit 1
+    fi
+
+    certificate=$(readIntoSingleLine ${certPath})
+    privateKey=$(readIntoSingleLine ${pkPath})
+    patch="'"$(eval echo ${ROUTE_CERTIFICATE_PATCH_TEMPLATE})"'"
+    echo ${patch}
+  )
+}
+
+installCertificate() {
+  (
+    case "$1}" in
+      *,*)
+        IFS=","
+        params=(${1})
+        unset IFS
+        projectName=${params[0]}
+        routeName=${params[1]}
+        certPath=${params[2]}
+        pkPath=${params[3]}
+        ;;
+      *)
+        projectName=${1}
+        routeName=${2}
+        certPath=${3}
+        pkPath=${4}
+    esac
+
+    if [ -z ${projectName} ] || [ -z ${routeName} ] || [ -z ${certPath} ] || [ -z ${pkPath} ]; then
+      echo -e \\n"installCertificate; Missing one or more parameters!"\\n
+      exit 1
+    fi
+
+    resourceType="route"
+    echo "Installing certificate [${certPath}] and private key [${pkPath}] on route [${routeName}] in project [${projectName}] ..."
+
+    certPatch=$(getCertificatePatch "${certPath}" "${pkPath}")
+    eval oc -n ${projectName} patch ${resourceType} ${routeName} -p ${certPatch}
+  )
+}
 
 # =================================================================================================================
 # Database Managment Functions:
@@ -712,7 +786,7 @@ dropAndRecreatePostgreSqlDatabase() {
 
 dropAndRecreateDatabaseWithMigrations() {
   (
-    # This function drops and recreates a PostgreSql database who's schema 
+    # This function drops and recreates a PostgreSql database who's schema
     # is managed by migrations hosted on an API pod.
     #
     # The function is purposely wrapped in a subshell `(...)` to avoid variable name collisions.
@@ -740,7 +814,7 @@ dropAndRecreateDatabaseWithMigrations() {
 
 deleteAndRecreateDatabaseWithMigrations() {
   (
-    # This function DELETES and recreates a PostgreSql database who's schema 
+    # This function DELETES and recreates a PostgreSql database who's schema
     # is managed by migrations hosted on an API pod.
     #
     # The function is purposely wrapped in a subshell `(...)` to avoid variable name collisions.
@@ -778,7 +852,7 @@ deleteAndRecreateDatabaseWithMigrations() {
 
 deleteAndRecreateDatabase() {
   (
-    # This function DELETES and recreates a PostgreSql database who's schema 
+    # This function DELETES and recreates a PostgreSql database who's schema
     # is managed by migrations hosted on some other pod.
     #
     # The function is purposely wrapped in a subshell `(...)` to avoid variable name collisions.
