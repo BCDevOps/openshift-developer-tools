@@ -555,11 +555,53 @@ cleanConfigs() {
   done
 }
 
+# Update route configuration including hostname
+updateRoutes() {
+  (
+    deploymentConfigFile=${1}
+    if [ -z "${deploymentConfigFile}" ]; then
+      echo -e \\n"updateRoutes; Missing parameter!"\\n
+      exit 1
+    fi
+  
+    # Filter out anything that is not a route ...
+    routeConfig=$(cat ${deploymentConfigFile} | jq 'if .items != null then del(.items[] | select(.kind != "Route")) else del(select(.kind != "Route")) end')
+    if [ -z "${routeConfig}" ] || [ "${routeConfig}" = "null" ]; then
+      # Everything was filtered out, so there is nothing left to update ...
+      exit 0
+    fi
+
+    # Determine if there is anything left ...
+    routeConfigLength=$(echo ${routeConfig} | jq '.items[] | length')
+    if [ ! -z "${routeConfigLength}" ]; then
+      # The hostname on a route is immutable, so the route needs to be deleted and replaced ...
+      echo ${routeConfig} | oc ${OC_ACTION} --force -f -
+      exitOnError
+    fi
+  )
+}
+
 deployConfigs() {
   _configFiles=$(getConfigFiles ${@})
   for configFile in ${_configFiles}; do
-    oc ${OC_ACTION} -f ${configFile}
-    exitOnError
+
+    if [ ${OC_ACTION} = "replace" ]; then
+      # Update existing routes first ...
+      updateRoutes ${configFile}
+
+      # Filter out the routes, since we've already updated them ...
+      config=$(cat ${configFile} | jq 'if .items != null then del(.items[] | select(.kind == "Route")) else del(select(.kind == "Route"))  end')
+      if [ -z "${config}" ] || [ "${config}" = "null" ]; then
+        # Everything was filtered out, so there is nothing left to update ...
+        exit 0
+      fi
+
+      echo ${config} | oc ${OC_ACTION} -f -
+      exitOnError
+    else
+      oc ${OC_ACTION} -f ${configFile}  
+      exitOnError
+    fi
   done
 }
 
@@ -708,6 +750,42 @@ getCertificatePatch() {
     privateKey=$(readIntoSingleLine ${pkPath})
     patch="'"$(eval echo ${ROUTE_CERTIFICATE_PATCH_TEMPLATE})"'"
     echo ${patch}
+  )
+}
+
+isProjectRoute() {
+  (
+    projectName=${1}
+    route=${2}
+
+    IFS=","
+    params=(${route})
+    unset IFS
+    targetProjectName=${params[0]}
+
+    if [[ ${targetProjectName} == ${projectName} ]]; then
+      return 0
+    else
+      return 1
+    fi
+  )
+}
+
+installCertificates() {
+  (
+    projectName=${1}
+    routes=${2}
+    if [ -z "${projectName}" ] || [ -z "${routes}" ] ; then
+      echo -e \\n"installCertificates; Missing parameter!"\\n
+      exit 1
+    fi
+
+    for route in ${routes}; do
+      if isProjectRoute "${projectName}" "${route}"; then
+        echo
+        installCertificate "${route}"
+      fi
+    done
   )
 }
 
