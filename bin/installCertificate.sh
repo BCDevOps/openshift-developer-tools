@@ -131,7 +131,4 @@ else
   usage
 fi
 
-for route in ${routes}; do
-  echo
-  installCertificate "${route}"
-done
+installCertificates "${projectName}" "${routes}"
