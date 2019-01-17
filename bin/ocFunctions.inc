@@ -563,7 +563,7 @@ updateRoutes() {
       echo -e \\n"updateRoutes; Missing parameter!"\\n
       exit 1
     fi
-  
+
     # Filter out anything that is not a route ...
     routeConfig=$(cat ${deploymentConfigFile} | jq 'if .items != null then del(.items[] | select(.kind != "Route")) else del(select(.kind != "Route")) end')
     if [ -z "${routeConfig}" ] || [ "${routeConfig}" = "null" ]; then
@@ -599,7 +599,7 @@ deployConfigs() {
       echo ${config} | oc ${OC_ACTION} -f -
       exitOnError
     else
-      oc ${OC_ACTION} -f ${configFile}  
+      oc ${OC_ACTION} -f ${configFile}
       exitOnError
     fi
   done
@@ -818,6 +818,32 @@ installCertificate() {
 
     certPatch=$(getCertificatePatch "${certPath}" "${pkPath}")
     eval oc -n ${projectName} patch ${resourceType} ${routeName} -p ${certPatch}
+  )
+}
+
+transferRoutes() {
+  (
+    fromProject=${1}
+    toProject=${2}
+    routes=${3}
+    tmpFile="transferRoute_DeploymentConfig.json"
+    if [ -z "${routes}" ] || [ -z "${fromProject}" ] || [ -z "${toProject}" ]; then
+      echo -e \\n"transferRoutes; Missing parameter!"\\n
+      exit 1
+    fi
+
+    printAndAskToContinue "Transfering Routes - If you contiune the following routes will be transfered from ${fromProject} to ${toProject}:\n${routes}\n"
+    for route in ${routes}; do
+      oc -n ${fromProject} export route ${route} > ${tmpFile}
+      exitOnError
+      echo "route \"${route}\" exported"
+      oc -n ${toProject} create -f ${tmpFile}
+      exitOnError
+      rm ${tmpFile}
+      exitOnError
+      oc -n ${fromProject} delete route ${route}
+      exitOnError
+    done
   )
 }
 
