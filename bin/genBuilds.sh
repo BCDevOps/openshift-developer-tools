@@ -116,6 +116,8 @@ if [ -z ${GEN_ONLY} ]; then
     echo -e \\n
   done
 
-  # Tage the images for deployment to the DEV environment ...
-  tagProjectImages.sh -s latest -t dev
+  if [ ! -z "${images}" ]; then
+    # Tag the images for deployment to the DEV environment ...
+    tagProjectImages.sh -s latest -t dev
+  fi 
 fi
