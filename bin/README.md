@@ -49,12 +49,32 @@ Also make sure `usr/local/bin` is at a higher priority on your **PATH** than `us
 `brew doctor` can help diagnose such issues.
 
 
+### Linux Setup
+
+These scripts use `awk`, but problems may be encountered if `mawk` is used rather than the GNU awk `gawk`. One distribution that uses `mawk` by default is Kali Linux for the Linux Subsystem for Windows:
+
+```
+$ awk -W version
+mawk 1.3.3 Nov 1996, Copyright (C) Michael D. Brennan
+```
+
+For Kali Linux, installing `gawk` will make it the default implementation of `awk`:
+
+```
+$ sudo apt-get install gawk
+[... etc ...]
+
+$ awk -W version
+GNU Awk 4.2.1, API: 2.0 (GNU MPFR 4.0.2, GNU MP 6.1.2)
+```
+
+
 
 ## Project Structure
 
 To use these scripts your project structure should be organized in one of two ways; split out by component, or simplified.  The one you choose should be based on the complexity of your project and your personal development preferences.
 
-Regardless of which you choose, you will always have a top level `./openshift` directory in your project where you keep you're main project settings (`settings.sh`) file.
+Regardless of which you choose, you will always have a top level `./openshift` directory in your project where you keep your main project settings (`settings.sh`) file.
 
 ### Component Project Structure
 
@@ -262,7 +282,7 @@ If you are adding and updating deployment configurations, run the script **witho
 
 **_Some settings on some resources are immutable.  You will need to delete and recreate the associated resource(s).  Care must be taken with resources containing credentials or other auto-generated resources, however.  You must insure such resources are replaced using the same values._**
 
-**_Updating the deployment configurations can affect (overwrite) auto-generated secretes such as the database username and password._**
+**_Updating the deployment configurations can affect (overwrite) auto-generated secrets such as the database username and password._**
 
 ## Fixing routes - for local instances
 
@@ -276,11 +296,11 @@ updateRoutes.sh
 
 ## Disk Pressure Issue (MAC and Windows)
 
-If you start seeing builds and deploys failing due to disk pressure issues it's because OpenShift think you are running out of disk space and will start evicting pods.
+If you start seeing builds and deploys failing due to disk pressure issues it's because OpenShift thinks you are running out of disk space and will start evicting pods.
 
 ### Docker on Windows
 
-The quick fix is to delete the Moby LLinux VM and it's associated virtual disk and start again.
+The quick fix is to delete the Moby Linux VM and its associated virtual disk and start again.
 
 ### MiniShift
 
@@ -307,7 +327,7 @@ If you run into certificate errors like `x509: certificate signed by unknown aut
 
 # Scripts
 
-Following is a list of the top level scripts.  There additional lower level scripts that are not listed here since they are wrapped into top level scripts.
+Following is a list of the top level scripts.  There are additional lower level scripts that are not listed here since they are wrapped into top level scripts.
 
 Use `-h` to get more detailed usage information on the scripts.
 
@@ -357,7 +377,7 @@ Push an image from your local Docker registry into an OpenShift project.
 
 ## runInContainer.sh
 
-This script is a wrapper around `oc exec` that allows you to run commands inside a pod instance based on it's general name.
+This script is a wrapper around `oc exec` that allows you to run commands inside a pod instance based on its general name.
 
 Refer to the usage documentation contained in the script for details.  Run the script without parameters to see the documentation.
 
