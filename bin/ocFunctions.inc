@@ -596,7 +596,7 @@ deployConfigs() {
         exit 0
       fi
 
-      echo ${config} | oc ${OC_ACTION} -f -
+      echo "${config}" | oc ${OC_ACTION} -f -
       exitOnError
     else
       oc ${OC_ACTION} -f ${configFile}
