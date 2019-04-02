@@ -30,21 +30,45 @@ All of the scripts will be available on the path and can be run from any directo
 
 These scripts use `sed` and regular expression processing.  The default version of `sed` on MAC does support some of the processing.  Details can be found here; [Differences between sed on Mac OSX and other "standard" sed?](https://unix.stackexchange.com/questions/13711/differences-between-sed-on-mac-osx-and-other-standard-sed)
 
+Update your path to have this repo's bin folder in it.  You may need to alter the paths in the command below to reflect wherever you cloned your fork to.  Append this line to your `~\.bashrc` file:
+
+```
+[[ ":$PATH:" != *"/openshift-developer-tools/bin:"* ]] && export PATH="~/openshift-developer-tools/bin:$PATH"
+```
+
 Please install `gnu-sed`.
 
 Using [Homebrew](https://brew.sh):
 
 ```
-brew install gnu-sed --with-default-names
+brew install gnu-sed
+```
+
+Then update your path and prepend `/usr/local/opt/gnu-sed/libexec/gnubin:` to your existing path so that the system defaults to using `sed` rather than `gsed`.  Append this line to your `~\.bashrc` file:
+
+```
+[[ ":$PATH:" != *"/usr/local/opt/gnu-sed/libexec/gnubin:"* ]] && export PATH="/usr/local/opt/gnu-sed/libexec/gnubin:$PATH"
 ```
 
 Similarly, you must install GNU find:
 
 ```
-brew install findutils --with-default-names
+brew install findutils
 ```
 
-Also make sure `usr/local/bin` is at a higher priority on your **PATH** than `usr/bin`.  This will ensure that packages installed by Homebrew override system binaries; in this case `sed`.
+Then update your path and prepend `/usr/local/opt/findutils/libexec/gnubin:` to your existing path so that the system defaults to using `find` rather than `gfind`.  Append this line to your `~\.bashrc` file:
+
+```
+[[ ":$PATH:" != *"/usr/local/opt/findutils/libexec/gnubin:"* ]] && export PATH="/usr/local/opt/findutils/libexec/gnubin:$PATH"
+```
+
+
+Also make sure `usr/local/bin` is at a higher priority on your **PATH** than `usr/bin`.  You can do this by making sure `usr/local/bin` is to the left of `usr/bin`, preceding it in the **PATH** string.  This will ensure that packages installed by Homebrew override system binaries; in this case `sed`.  Append this line to your `~\.bashrc` file:
+
+```
+[[ ":$PATH:" != *"/usr/local/bin:"* ]] && export PATH="/usr/local/bin:$PATH"
+```
+
 
 `brew doctor` can help diagnose such issues.
 
