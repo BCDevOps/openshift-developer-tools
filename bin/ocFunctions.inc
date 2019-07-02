@@ -704,7 +704,13 @@ getPodNameByLabel() {
       exit 1
     fi
 
-    _podInstanceName=$(oc get pods -n $(getProjectName) -l "${_label}=${_podName}" --template "{{ with index .items ${_podIndex} }}{{ .metadata.name }}{{ end }}" --ignore-not-found)
+    if [[ _podIndex > 0 ]] ; then
+      # Get the pod name using the specified pod index ...
+      _podInstanceName=$(oc get pods -n $(getProjectName) -l "${_label}=${_podName}" --template "{{ with index .items ${_podIndex} }}{{ .metadata.name }}{{ end }}" --ignore-not-found)
+    else
+      # Get the name of the first running pod ...
+      _podInstanceName=$(oc get pods -n $(getProjectName) -l "${_label}=${_podName}" --template '{{ range .items }}{{ if eq .status.phase "Running" }}{{ printf "%s\n" .metadata.name }}{{end}}{{end}}' --ignore-not-found | head -n 1)
+    fi
     echo ${_podInstanceName}
   )
 }
