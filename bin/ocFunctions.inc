@@ -114,6 +114,25 @@ podExists (){
   )
 }
 
+dcExists (){
+  (
+    _dcName=${1}
+    if [ -z "${_dcName}" ]; then
+      echo -e \\n"dcExists; Missing parameter!"\\n
+      exit 1
+    fi
+
+    _dcInstanceName=$(oc -n devex-von-image-tools get dc ${_dcName} --ignore-not-found --template "{{ .metadata.name }}")
+    if [ ! -z "${_dcInstanceName}" ]; then
+      # The  deployment configuration exists ...
+      return 0
+    else
+      # The deployment configuration does not exist ...
+      return 1
+    fi
+  )
+}
+
 assignRole (){
   (
     role=$1
