@@ -4,6 +4,33 @@ export MSYS_NO_PATHCONV=1
 # =================================================================================================================
 # Functions:
 # -----------------------------------------------------------------------------------------------------------------
+globalUsage() {
+  # Print the scripts useage first ...
+  usage
+
+  cat <<-EOF
+
+  Global Options:
+    - Note: Local script options will override global options.
+  ========
+    -h prints the usage for the script
+    -e <Environment> the environment (dev/test/prod) into which you are deploying (default: ${DEPLOYMENT_ENV_NAME})
+    -c <component> to generate parameters for templates of a specific component
+    -l apply local settings and parameters
+    -p <profile> load a specific settings profile; setting.<profile>.sh
+    -P Use the default settings profile; settings.sh.  Use this flag to ignore all but the default 
+       settings profile when there is more than one settings profile defined for a project.        
+    -k keep the json produced by processing the template
+    -u update OpenShift deployment configs instead of creating the configs
+    -x run the script in debug mode to see what's happening
+    -g process the templates and generate the configuration files, but do not create or update them
+       automatically set the -k option
+
+    Update settings.sh and settings.local.sh files to set defaults
+EOF
+  exit 1
+}
+
 echoWarning (){
   _msg=${1}
   _yellow='\033[1;33m'
@@ -60,7 +87,7 @@ printProfiles() {
   for _profile in ${_profiles}; do
     echoWarning "${_profile} - ${_settingsFileName}.${_profile}${_settingsFileExt}"
   done
-  echoWarning "=================================================================================================="  
+  echoWarning "=================================================================================================="
 }
 
 printSettingsFileNotFound() {
@@ -70,7 +97,7 @@ printSettingsFileNotFound() {
   echoWarning "No project settings file (${_settingsFileName}${_settingsFileExt}) was found in '${PWD}'."
   echoWarning "Make sure you're running the script from your project's top level 'openshift' directory"
   echoWarning "and you have a 'settings.sh' file in that folder."
-  echoWarning "=================================================================================================="  
+  echoWarning "=================================================================================================="
 }
 
 printLocalSettingsFileNotFound() {
@@ -88,7 +115,7 @@ printProfileNotFound() {
   echoWarning "Warning:"
   echoWarning "--------------------------------------------------------------------------------------------------"
   echoWarning "The selected settings profile does not exist. Please select from one of the available profiles."
-  echoWarning "=================================================================================================="  
+  echoWarning "=================================================================================================="
 }
 
 validateSettings() {
@@ -108,7 +135,7 @@ validateSettings() {
   fi
 
   # Validate project profile settings ...
-  if [ -z ${IGNORE_PROFILES} ]; then  
+  if [ -z ${IGNORE_PROFILES} ]; then
     if profileExists "${PROFILE}"; then
       _profileExists=0
     fi
@@ -137,7 +164,7 @@ validateSettings() {
   fi
 
   if [ ! ${_error} ]; then
-    # Load settings in order    
+    # Load settings in order
     # 1. settings.sh
     if [ ${_applyProjectSettings} ]; then
       _settingsFiles="${_settingsFiles} ./${_settingsFileName}${_settingsFileExt}"
@@ -159,16 +186,66 @@ validateSettings() {
     return 1
   fi
 }
+
+settingsLoaded() {
+  (
+    if [ -z "${SETTINGS_LOADED}" ]; then
+      return 1
+    else
+      return 0
+    fi
+  )
+}
 # =================================================================================================================
 
 # =================================================================================================================
 # Main Script:
 # -----------------------------------------------------------------------------------------------------------------
-if [ -z "${SETTINGS_LOADED}" ]; then
+if ! settingsLoaded; then
   export _componentSettingsFileName=component.settings.sh
   _settingsFileName="settings"
   _settingsFileExt=".sh"
   _localProfileName="local"
+
+  # =================================================================================================================
+  # Process the command line arguments:
+  # - Don't allow any unrecognized options or arguments at this point.
+  # - In case you wanted to check what variables were passed; echo "flags = $*"
+  # -----------------------------------------------------------------------------------------------------------------
+  OPTIND=1
+  while [ ${OPTIND} -le $# ]; do
+    if getopts :p:Pc:e:lukxhg FLAG; then
+      case $FLAG in
+        h ) globalUsage ;;
+        c ) export COMP=$OPTARG ;;
+        p ) export PROFILE=$OPTARG ;;
+        P ) export IGNORE_PROFILES=1 ;;
+        e ) export DEPLOYMENT_ENV_NAME=$OPTARG ;;
+        l ) export APPLY_LOCAL_SETTINGS=1 ;;
+        u ) export OC_ACTION=replace ;;
+        k ) export KEEPJSON=1 ;;
+        x ) export DEBUG=1 ;;
+        g ) 
+          export KEEPJSON=1
+          export GEN_ONLY=1
+          ;;
+
+        \? ) 
+          echoWarning "\nUnrecognized option [-$OPTARG]:\n"
+          globalUsage
+          ;;
+      esac
+    else
+      echoWarning "\nUnrecognized argument [${!OPTIND}]:\n"
+      globalUsage
+    fi
+  done
+  shift $((OPTIND-1))
+  # =================================================================================================================
+
+  if [ ! -z "${DEBUG}" ]; then
+    set -x
+  fi
 
   if validateSettings; then
     # Load settings ...
@@ -178,7 +255,7 @@ if [ -z "${SETTINGS_LOADED}" ]; then
       echo -e "Loading settings from ${PWD}/${_settingsFile##*/} ..."
       . ${_settingsFile}
     done
-  else 
+  else
     echoWarning \\n"Your settings are invalid.  Please review the previous messages to correct the errors."
     exit 1
   fi

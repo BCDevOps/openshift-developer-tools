@@ -6,20 +6,18 @@ usage() {
   cat <<-EOF
   Tool to transfer existing OpenShift routes from one project to another.
 
-  Usage: ${0} [ Options ]
+  Usage: 
+    ${0##*/} [ Options ]
 
   Examples:
     Using a config file (recommended):
-      - ${0} -s devex-bcgov-dac-dev -d devex-von-bc-tob-prod -f routes.conf
+      - ${0##*/} -s devex-bcgov-dac-dev -d devex-von-bc-tob-prod -f routes.conf
 
     Using discrete parameters:
-      - ${0} -s devex-bcgov-dac-dev -d devex-von-bc-tob-prod -r www-orgbook
+      - ${0##*/} -s devex-bcgov-dac-dev -d devex-von-bc-tob-prod -r www-orgbook
 
   Options:
   ========
-    -h prints the usage for the script
-    -x run the script in debug mode to see what's happening
-
     -f <ConfigFilePath>; The path to a config file containing a list of one or more routes to transfer.
 
        Example file:
@@ -40,43 +38,35 @@ usage() {
 
     -d <destinationProjectName>; The name of the destination project.
 EOF
-exit
 }
 
-# Process the command line arguments
-# In case you wanted to check what variables were passed
-# echo "flags = $*"
-while getopts s:d:f:r:xh FLAG; do
-  case $FLAG in
-    s )
-      fromProject=$OPTARG
-      ;;
-    d )
-      toProject=$OPTARG
-      ;;
-    f )
-      configFile=$OPTARG
-      ;;
-    r )
-      routeName=$OPTARG
-      ;;
-    x )
-      export DEBUG=1
-      ;;
-    h )
-      usage
-      ;;
-    \? )
-      #unrecognized option - show help
-      echo -e \\n"Invalid script option: -${OPTARG}"\\n
-      usage
-      ;;
-  esac
+# =================================================================================================================
+# Process the local command line arguments and pass everything else along.
+# - The 'getopts' options string must start with ':' for this to work.
+# -----------------------------------------------------------------------------------------------------------------
+while [ ${OPTIND} -le $# ]; do
+  if getopts :s:d:f:r: FLAG; then
+    case ${FLAG} in
+      # List of local options:
+      s ) fromProject=$OPTARG ;;
+      d ) toProject=$OPTARG ;;
+      f ) configFile=$OPTARG ;;
+      r ) routeName=$OPTARG ;;
+
+      # Pass unrecognized options ...
+      \?) pass+=" -${OPTARG}" ;;
+    esac
+  else
+    # Pass unrecognized arguments ...
+    pass+=" ${!OPTIND}"
+    let OPTIND++
+  fi
 done
 
-# Shift the parameters in case there any more to be used
+# Pass the unrecognized arguments along for further processing ...
 shift $((OPTIND-1))
-# echo Remaining arguments: $@
+set -- "$@" $(echo -e "${pass}" | sed -e 's/^[[:space:]]*//')
+# =================================================================================================================
 
 # Profiles are not used for this script
 export IGNORE_PROFILES=1
@@ -87,10 +77,6 @@ fi
 
 if [ -f ${OCTOOLSBIN}/ocFunctions.inc ]; then
   . ${OCTOOLSBIN}/ocFunctions.inc
-fi
-
-if [ ! -z "${DEBUG}" ]; then
-  set -x
 fi
 # ==============================================================================
 

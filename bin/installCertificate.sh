@@ -17,14 +17,6 @@ usage() {
 
   Options:
   ========
-    -h prints the usage for the script
-    -e <Environment> the environment (dev/test/prod) into which you are deploying (default: ${DEPLOYMENT_ENV_NAME})
-    -l apply local settings and parameters
-    -p <profile> load a specific settings profile; setting.<profile>.sh
-    -P Use the default settings profile; settings.sh.  Use this flag to ignore all but the default 
-       settings profile when there is more than one settings profile defined for a project.        
-    -x run the script in debug mode to see what's happening
-
     -f <ConfigFilePath>; The path to a config file containing a list of comma separated entries containing the
        parameters needed to install certificates on one or more routes.
 
@@ -47,60 +39,36 @@ usage() {
     -c <certificatePath>; The path to the certificate file.
 
     -k <privateKeyFile>; The path to the private key for the certificate.
-
-    Update settings.sh and settings.local.sh files to set defaults
 EOF
-exit
 }
 
-# Process the command line arguments
-# In case you wanted to check what variables were passed
-# echo "flags = $*"
-while getopts f:e:r:c:k:p:Plxh FLAG; do
-  case $FLAG in
-    f ) 
-      configFile=$OPTARG 
-      ;;
-    e ) 
-      export DEPLOYMENT_ENV_NAME=$OPTARG
-      ;;
-    r ) 
-      routeName=$OPTARG
-      ;;
-    c ) 
-      certFilename=$OPTARG 
-      ;;
-    k ) 
-      pkFilename=$OPTARG 
-      ;;
-    p ) 
-      export PROFILE=$OPTARG 
-      ;;
+# =================================================================================================================
+# Process the local command line arguments and pass everything else along.
+# - The 'getopts' options string must start with ':' for this to work.
+# -----------------------------------------------------------------------------------------------------------------
+while [ ${OPTIND} -le $# ]; do
+  if getopts :f:r:c:k: FLAG; then
+    case ${FLAG} in
+      # List of local options:
+      f ) configFile=$OPTARG ;;
+      r ) routeName=$OPTARG ;;
+      c ) certFilename=$OPTARG ;;
+      k ) pkFilename=$OPTARG ;;
 
-    P ) 
-      export IGNORE_PROFILES=1 
-      ;;    
-    l ) 
-      export APPLY_LOCAL_SETTINGS=1 
-      ;;
-
-    x ) 
-      export DEBUG=1
-      ;;
-    h ) 
-      usage 
-      ;;
-    \? )
-      #unrecognized option - show help
-      echo -e \\n"Invalid script option: -${OPTARG}"\\n
-      usage
-      ;;
-  esac
+      # Pass unrecognized options ...
+      \?) pass+=" -${OPTARG}" ;;
+    esac
+  else
+    # Pass unrecognized arguments ...
+    pass+=" ${!OPTIND}"
+    let OPTIND++
+  fi
 done
 
-# Shift the parameters in case there any more to be used
+# Pass the unrecognized arguments along for further processing ...
 shift $((OPTIND-1))
-# echo Remaining arguments: $@
+set -- "$@" $(echo -e "${pass}" | sed -e 's/^[[:space:]]*//')
+# =================================================================================================================
 
 if [ -f ${OCTOOLSBIN}/settings.sh ]; then
   . ${OCTOOLSBIN}/settings.sh
@@ -108,10 +76,6 @@ fi
 
 if [ -f ${OCTOOLSBIN}/ocFunctions.inc ]; then
   . ${OCTOOLSBIN}/ocFunctions.inc
-fi
-
-if [ ! -z "${DEBUG}" ]; then
-  set -x
 fi
 # ==============================================================================
 
