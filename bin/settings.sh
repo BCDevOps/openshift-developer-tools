@@ -252,7 +252,7 @@ if ! settingsLoaded; then
         P ) export IGNORE_PROFILES=1 ;;
         e ) export DEPLOYMENT_ENV_NAME=$OPTARG ;;
         l ) export APPLY_LOCAL_SETTINGS=1 ;;
-        u ) export OC_ACTION=replace ;;
+        u ) export OPERATION=update ;;
         k ) export KEEPJSON=1 ;;
         x ) export DEBUG=1 ;;
         g ) 
@@ -275,9 +275,9 @@ if ! settingsLoaded; then
   OPTIND=1
   unset pass
 
-  if ! usesCommandLineArguments; then 
-    echoWarning "\nUnexpected command line argument(s) were supplied; [$@]."
-    echoWarning "If your script is expecting these arguments you can turn off the warning by implementing the 'onUsesCommandLineArguments' hook in your script before the main settings script is loaded."
+  if [ ! -z ${@} ] && ! usesCommandLineArguments; then 
+    echoWarning "\nUnexpected command line argument(s) were supplied; [${@}]."
+    echoWarning "If your script is expecting these argument(s) you can turn off the warning by implementing the 'onUsesCommandLineArguments' hook in your script before the main settings script is loaded.  The hook should return 0 if you are expecting arguments."
   fi
   # =================================================================================================================
 
@@ -309,7 +309,8 @@ if ! settingsLoaded; then
   export PROJECT_DIR=${PROJECT_DIR:-..}
   export PROJECT_OS_DIR=${PROJECT_OS_DIR:-.}
 
-  export OC_ACTION=${OC_ACTION:-create}
+  export OPERATION=${OPERATION:-create}
+  export OC_ACTION=${OC_ACTION:-apply}
   export DEV=${DEV:-dev}
   export TEST=${TEST:-test}
   export PROD=${PROD:-prod}

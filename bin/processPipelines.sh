@@ -2,11 +2,6 @@
 
 OCTOOLSBIN=$(dirname $0)
 
-if [ -z "${OC_ACTION}" ]; then
-  echo -e \\n"Missing parameter."\\n
-  exit 1
-fi
-
 if [ -f ${OCTOOLSBIN}/ocFunctions.inc ]; then
   . ${OCTOOLSBIN}/ocFunctions.inc
 fi

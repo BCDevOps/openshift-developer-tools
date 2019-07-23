@@ -113,17 +113,17 @@ generateConfigs() {
       fi
     fi
 
-    if [ ${OC_ACTION} = "replace" ]; then
+    if updateOperation; then
       echoWarning "Preparing deployment configuration for update/replace, removing any 'Secret' objects so existing values are left untouched ..."
       oc process --filename=${_template} ${SPECIALDEPLOYPARM} ${LOCALPARAM} ${ENVPARAM} ${PARAMFILE} \
       | jq 'del(.items[] | select(.kind== "Secret"))' \
       > ${_deploymentConfig}
       exitOnError
-    elif [ ${OC_ACTION} = "create" ]; then
+    elif createOperation; then
       oc process --filename=${_template} ${SPECIALDEPLOYPARM} ${LOCALPARAM} ${ENVPARAM} ${PARAMFILE} > ${_deploymentConfig}
       exitOnError
     else
-      echoError "\nUnrecognized OC_ACTION, ${OC_ACTION}.  Unable to process template.\n"
+      echoError "\nUnrecognized operation, $(getOperation).  Unable to process template.\n"
       exit 1
     fi
   

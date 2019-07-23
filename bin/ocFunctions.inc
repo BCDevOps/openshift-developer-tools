@@ -69,6 +69,34 @@ exitOnError() {
   fi
 }
 
+getOperation() {
+  (
+    echo $(toLower ${OPERATION})
+  )
+}
+
+createOperation() {
+  (
+    action=$(getOperation)
+    if [ ${action} = "create" ]; then
+      return 0
+    else
+      return 1
+    fi
+  )
+}
+
+updateOperation() {
+  (
+    action=$(getOperation)
+    if [ ${action} = "update" ]; then
+      return 0
+    else
+      return 1
+    fi
+  )
+}
+
 isLocalCluster (){
   rtnVal=$(oc whoami -c |  grep '/127-0\|/10-0\|/192-168\|minishift')
   if [ -z "$rtnVal" ]; then
@@ -604,7 +632,7 @@ deployConfigs() {
   _configFiles=$(getConfigFiles ${@})
   for configFile in ${_configFiles}; do
 
-    if [ ${OC_ACTION} = "replace" ]; then
+    if updateOperation; then
       # Update existing routes first ...
       updateRoutes ${configFile}
 
