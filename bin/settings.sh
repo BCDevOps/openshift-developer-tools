@@ -196,6 +196,36 @@ settingsLoaded() {
     fi
   )
 }
+
+ensureRequiredOptionsExist() {
+  (
+    # Call the 'onRequiredOptionsExist' hook if defined ...
+    if type onRequiredOptionsExist &>/dev/null; then
+      if onRequiredOptionsExist; then
+        return 0
+      else
+        return 1
+      fi
+    else
+      return 0
+    fi
+  )
+}
+
+usesCommandLineArguments() {
+  (
+    # Call the 'onUsesCommandLineArguments' hook if defined ...
+    if type onUsesCommandLineArguments &>/dev/null; then
+      if onUsesCommandLineArguments; then
+        return 0
+      else
+        return 1
+      fi
+    else
+      return 1
+    fi
+  )
+}
 # =================================================================================================================
 
 # =================================================================================================================
@@ -209,10 +239,10 @@ if ! settingsLoaded; then
 
   # =================================================================================================================
   # Process the command line arguments:
-  # - Don't allow any unrecognized options or arguments at this point.
   # - In case you wanted to check what variables were passed; echo "flags = $*"
   # -----------------------------------------------------------------------------------------------------------------
   OPTIND=1
+  unset pass
   while [ ${OPTIND} -le $# ]; do
     if getopts :p:Pc:e:lukxhg FLAG; then
       case $FLAG in
@@ -229,22 +259,34 @@ if ! settingsLoaded; then
           export KEEPJSON=1
           export GEN_ONLY=1
           ;;
-
-        \? ) 
-          echoWarning "\nUnrecognized option [-$OPTARG]:\n"
-          globalUsage
-          ;;
+        
+        # Collect unrecognized options ...
+        \?) pass+=" -${OPTARG}" ;;
       esac
     else
-      echoWarning "\nUnrecognized argument [${!OPTIND}]:\n"
-      globalUsage
+      # Collect unrecognized arguments ...
+      pass+=" ${!OPTIND}"
+      let OPTIND++
     fi
   done
+  # Pass the unrecognized arguments along for further processing ...
   shift $((OPTIND-1))
+  set -- "$@" $(echo -e "${pass}" | sed -e 's/^[[:space:]]*//')
+  OPTIND=1
+  unset pass
+
+  if ! usesCommandLineArguments; then 
+    echoWarning "\nUnexpected command line argument(s) were supplied; [$@]."
+    echoWarning "If your script is expecting these arguments you can turn off the warning by implementing the 'onUsesCommandLineArguments' hook in your script before the main settings script is loaded."
+  fi
   # =================================================================================================================
 
   if [ ! -z "${DEBUG}" ]; then
     set -x
+  fi
+
+  if ! ensureRequiredOptionsExist; then
+    globalUsage
   fi
 
   if validateSettings; then
