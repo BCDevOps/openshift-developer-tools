@@ -32,7 +32,7 @@ EOF
 }
 
 echoWarning (){
-  _msg=${1}
+  _msg=${@}
   _yellow='\033[1;33m'
   _nc='\033[0m' # No Color
   echo -e "${_yellow}${_msg}${_nc}"
@@ -264,7 +264,7 @@ if ! settingsLoaded; then
   OPTIND=1
   unset pass
 
-  if [ ! -z ${@} ] && ! usesCommandLineArguments; then
+  if [[ ! -z "${@}" ]] && ! usesCommandLineArguments; then
     echoWarning "\nUnexpected command line argument(s) were supplied; [${@}]."
     echoWarning "If your script is expecting these argument(s) you can turn off the warning by implementing the 'onUsesCommandLineArguments' hook in your script before the main settings script is loaded.  The hook should return 0 if you are expecting arguments."
   fi
