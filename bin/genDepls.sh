@@ -11,6 +11,20 @@ usage() {
 EOF
 }
 
+postDeploymentProcessing() {
+  cat <<-EOF
+
+Use the OpenShift Console to monitor the deployment in the ${PROJECT_NAMESPACE}-${DEPLOYMENT_ENV_NAME} project.
+
+If a deploy hangs take these steps:
+ - cancel the instance of the deployment
+ - edit the Deployment Config Resources and remove the entire 'resources' node; this should only be an issue for local deployments."
+ - click the Deploy button to restart the deploy
+
+EOF
+}
+
+
 if [ -f ${OCTOOLSBIN}/settings.sh ]; then
   . ${OCTOOLSBIN}/settings.sh
 fi
@@ -27,23 +41,16 @@ for component in ${components}; do
   fi
 
   echo -e \\n"Configuring the ${DEPLOYMENT_ENV_NAME} environment for ${component} ..."\\n
-	pushd ../${component}/openshift >/dev/null
-	compDeployments.sh component
-	exitOnError
-	popd >/dev/null
+  pushd ../${component}/openshift >/dev/null
+  compDeployments.sh component
+  exitOnError
+  popd >/dev/null
 done
 
 if [ -z ${GEN_ONLY} ]; then
-  # ==============================================================================
-  # Post Deployment processing
-  cat <<-EOF
+  # If a certificate.conf file is found try to automatically install the cerificates.
+  deployCertificates
 
-Use the OpenShift Console to monitor the deployment in the ${PROJECT_NAMESPACE}-${DEPLOYMENT_ENV_NAME} project.
-
-If a deploy hangs take these steps:
- - cancel the instance of the deployment
- - edit the Deployment Config Resources and remove the entire 'resources' node; this should only be an issue for local deployments."
- - click the Deploy button to restart the deploy
-
-EOF
+  # Print post deployment processing information
+  postDeploymentProcessing
 fi

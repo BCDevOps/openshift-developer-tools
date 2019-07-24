@@ -622,7 +622,13 @@ updateRoutes() {
     routeConfigLength=$(echo ${routeConfig} | jq '.items[] | length')
     if [ ! -z "${routeConfigLength}" ]; then
       # The hostname on a route is immutable, so the route needs to be deleted and replaced ...
-      echo ${routeConfig} | oc ${OC_ACTION} --force -f -
+      # 'oc apply' will not delete and replace the route even if --force is used.
+      # 'oc apply' will not update the host field if it has changed.
+      # Therefore, 'oc replace' needs to be used to update the route.
+      #
+      # --force - Forces the delete and replace
+      # --save-config - Maintains compatibility with 'oc apply'
+      echo ${routeConfig} | oc replace --force --save-config -f -
       exitOnError
     fi
   )
@@ -794,8 +800,10 @@ getCertificatePatch() {
   (
     certPath=${1}
     pkPath=${2}
-    if [ ! -f ${certPath} ]  || [ ! -f ${pkPath} ]; then
-      echo -e \\n"getCertificatePatch; Unable to locate one of the required files!"\\n
+    if [ ! -f ${certPath} ] || [ ! -f ${pkPath} ]; then
+      echoWarning "getCertificatePatch; Unable to locate one of the required files!" >&2
+      echoWarning "Certificate: ${certPath}" >&2
+      echoWarning "Private Key: ${pkPath}"\\n >&2
       exit 1
     fi
 
@@ -820,6 +828,18 @@ isProjectRoute() {
       return 0
     else
       return 1
+    fi
+  )
+}
+
+deployCertificates() {
+  (
+    configFile=${1:-certificate.conf}
+    projectName=$(getProjectName)
+    if [ ! -z ${configFile} ] && [ -f ${configFile} ]; then
+      echo -e \\n"Found ${configFile} file, attempting to install certificates ..."
+      routes=$(readConf ${configFile})
+      installCertificates "${projectName}" "${routes}"
     fi
   )
 }
@@ -869,8 +889,14 @@ installCertificate() {
     resourceType="route"
     echo "Installing certificate [${certPath}] and private key [${pkPath}] on route [${routeName}] in project [${projectName}] ..."
 
+    unset certPatch
     certPatch=$(getCertificatePatch "${certPath}" "${pkPath}")
-    eval oc -n ${projectName} patch ${resourceType} ${routeName} -p ${certPatch}
+
+    if [ ! -z "${certPatch}" ]; then
+      eval oc -n ${projectName} patch ${resourceType} ${routeName} -p ${certPatch}
+    else
+      echoError "Unable to install the certificate.  To install the certificate please ensure copies of the certificate and private key exist in the specified location."
+    fi 
   )
 }
 
