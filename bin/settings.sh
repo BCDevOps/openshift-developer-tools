@@ -147,10 +147,10 @@ validateSettings() {
   fi
 
   # 2. settings.${PROFILE}.sh
-  if [ ! ${_error} ]; then
+  if [ ! ${_error} ] && [ -z "${IGNORE_PROFILES}" ]; then
     if [ ! -z "${PROFILE}" ] && [ "${PROFILE}" != "${_defaultProfileName}" ] && profileExists ${PROFILE}; then
       _settingsFiles="${_settingsFiles} ./${_settingsFileName}.${PROFILE}${_settingsFileExt}"
-    elif ([ -z "${PROFILE}" ] && [ -z "${IGNORE_PROFILES}" ]) || ([ ! -z "${PROFILE}" ] && [ "${PROFILE}" != "${_defaultProfileName}" ]); then
+    elif [ ! -z "${PROFILE}" ] && [ "${PROFILE}" != "${_defaultProfileName}" ]; then
       _error=0
       printProfileNotFound
     fi
