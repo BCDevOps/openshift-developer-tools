@@ -70,7 +70,7 @@ generateConfigs() {
     _template="${deploy}"
     _template_basename=$(getFilenameWithoutExt ${deploy})
     _deploymentConfig="${_template_basename}${DEPLOYMENT_CONFIG_SUFFIX}"
-    PARAM_OVERRIDE_SCRIPT="${_template_basename}.overrides.sh"
+    PARAM_OVERRIDE_SCRIPT=$(find . -name "${_template_basename}.overrides.sh")
 
     if [ ! -z "${PROFILE}" ]; then
       _paramFileName="${_template_basename}.${PROFILE}"
@@ -106,10 +106,10 @@ generateConfigs() {
     if [ -f ${PARAM_OVERRIDE_SCRIPT} ]; then
       if [ -z "${SPECIALDEPLOYPARM}" ]; then
         echo -e "Loading parameter overrides for ${deploy} ..."
-        SPECIALDEPLOYPARM=$(${PWD}/${PARAM_OVERRIDE_SCRIPT})
+        SPECIALDEPLOYPARM=$(${PARAM_OVERRIDE_SCRIPT})
       else
         echo -e "Adding parameter overrides for ${deploy} ..."
-        SPECIALDEPLOYPARM="${SPECIALDEPLOYPARM} $(${PWD}/${PARAM_OVERRIDE_SCRIPT})"
+        SPECIALDEPLOYPARM="${SPECIALDEPLOYPARM} $(${PARAM_OVERRIDE_SCRIPT})"
       fi
     fi
 
