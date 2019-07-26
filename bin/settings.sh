@@ -299,7 +299,6 @@ if ! settingsLoaded; then
   export PROJECT_OS_DIR=${PROJECT_OS_DIR:-.}
 
   export OPERATION=${OPERATION:-create}
-  export OC_ACTION=${OC_ACTION:-apply}
   export DEV=${DEV:-dev}
   export TEST=${TEST:-test}
   export PROD=${PROD:-prod}

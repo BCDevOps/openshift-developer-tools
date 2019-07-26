@@ -24,7 +24,7 @@ echoError (){
   _msg=${1}
   _red='\033[0;31m'
   _nc='\033[0m' # No Color
-  echo -e "${_red}${_msg}${_nc}"
+  echo -e "${_red}${_msg}${_nc}" >&2
 }
 
 printAndWait() {
@@ -94,6 +94,24 @@ updateOperation() {
     else
       return 1
     fi
+  )
+}
+
+getOcAction() {
+  (
+    unset _action
+
+    if createOperation; then
+      # --save-config - Maintains compatibility with 'oc apply'
+      _action="create --save-config"
+    elif updateOperation; then
+      _action="apply"
+    else
+      echoError "\nUnrecognized oc action, $(getOperation).\n"
+      exit 1
+    fi
+
+    echo "${_action}"
   )
 }
 
@@ -649,10 +667,10 @@ deployConfigs() {
         exit 0
       fi
 
-      echo "${config}" | oc ${OC_ACTION} -f -
+      echo "${config}" | oc $(getOcAction) -f -
       exitOnError
     else
-      oc ${OC_ACTION} -f ${configFile}
+      oc $(getOcAction) -f ${configFile}
       exitOnError
     fi
   done

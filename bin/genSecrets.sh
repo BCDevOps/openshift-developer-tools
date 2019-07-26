@@ -155,7 +155,7 @@ processSecret () {
   fi
 
   if [ -z ${GEN_ONLY} ]; then
-    oc ${OC_ACTION} -f ${_configFile}
+    oc $(getOcAction) -f ${_configFile}
     exitOnError
   fi
 

@@ -62,7 +62,7 @@ for build in ${BUILDS}; do
   oc process --filename=${_template} ${LOCALPARAM} ${PARAMFILE} > ${_buildConfig}
   exitOnError
   if [ -z ${GEN_ONLY} ]; then
-    oc ${OC_ACTION} -f ${_buildConfig}
+    oc $(getOcAction) -f ${_buildConfig}
     exitOnError
   fi
 
