@@ -35,16 +35,14 @@ fi
 # ==============================================================================
 
 for component in ${components}; do
-  if [ ! -z "${COMP}" ] && [ ! "${COMP}" = ${component} ]; then
+  if [ ! -z "${COMP}" ] && [ ! "${component}" = "." ] && [ ! "${COMP}" = ${component} ]; then
     # Only process named component if -c option specified
     continue
   fi
 
   echo -e \\n"Configuring the ${DEPLOYMENT_ENV_NAME} environment for ${component} ..."\\n
-  pushd ../${component}/openshift >/dev/null
   compDeployments.sh component
   exitOnError
-  popd >/dev/null
 done
 
 if [ -z ${GEN_ONLY} ]; then

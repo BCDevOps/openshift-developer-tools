@@ -327,14 +327,51 @@ getBuildTemplates () {
   echo $(find ${_searchPath} -regex "^.*\.\(json\|yaml\|yml\)" -exec grep -l "BuildConfig\|\"ImageStream\"\|kind:.ImageStream$" '{}' \; | xargs | sed "s/\.\///g")
 }
 
-getDeploymentTemplates () {
-  _searchPath=${1}
-   if [ -z "${_searchPath}" ]; then
-    echo -e \\n"getDeploymentTemplates; Missing parameter!"\\n
-    exit 1
-  fi
 
-  echo $(find ${_searchPath} -regex "^.*\.\(json\|yaml\|yml\)" -exec grep -l "DeploymentConfig\|Route" '{}' \; | xargs | sed "s/\.\///g")
+getTemplateDir () {
+  (
+    _componentName=${1:-${COMP}}
+    _searchPath=${2:-${PROJECT_DIR}}
+    unset _comResults
+    unset _simpleResults
+
+    if [ -z ${_componentName} ]; then
+      _compPattern="^.*/openshift/${TEMPLATE_DIR}"
+      _simplePattern="^.*/openshift/${TEMPLATE_DIR}"
+    else
+      _compPattern="^.*/${_componentName}/*.*/*openshift/${TEMPLATE_DIR}"
+      _simplePattern="^.*/openshift/${TEMPLATE_DIR}/*.*/*${_componentName}"
+    fi
+
+    _comResults=$(find ${_searchPath} -type d -regex "${_compPattern}")
+    if [ ! "${_compPattern}" = "${_simplePattern}" ]; then
+      _simpleResults=$(find ${_searchPath} -type d -regex "${_simplePattern}")
+    fi
+
+    _results=${_comResults}
+    if [ ! -z "${_simpleResults}" ] &&  [ ! "${_comResults}" = "${_simpleResults}" ]; then
+      _results+=" ${_simpleResults}"
+    fi
+
+    echo ${_results}
+  )
+}
+
+getDeploymentTemplates () {
+  (
+    _searchPaths=${@}
+    if [ -z "${_searchPaths}" ]; then
+      echoError \\n"getDeploymentTemplates; Missing parameter!"\\n
+      exit 1
+    fi
+
+    unset deploymentTemplates
+    for searchPath in ${_searchPaths}; do
+      deploymentTemplates+=" $(find ${searchPath} -regex "^.*\.\(json\|yaml\|yml\)" -exec grep -l "DeploymentConfig\|Route" '{}' \;)"
+    done
+
+    echo ${deploymentTemplates}
+  )
 }
 
 getComponentNameFromDir () {
@@ -914,7 +951,7 @@ installCertificate() {
       eval oc -n ${projectName} patch ${resourceType} ${routeName} -p ${certPatch}
     else
       echoError "Unable to install the certificate.  To install the certificate please ensure copies of the certificate and private key exist in the specified location."
-    fi 
+    fi
   )
 }
 
