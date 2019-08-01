@@ -106,10 +106,10 @@ generateConfigs() {
     if [ -f ${PARAM_OVERRIDE_SCRIPT} ]; then
       if [ -z "${SPECIALDEPLOYPARM}" ]; then
         echo -e "Loading parameter overrides for ${deploy} ..."
-        SPECIALDEPLOYPARM=$(${PARAM_OVERRIDE_SCRIPT})
+        SPECIALDEPLOYPARM=$(OPERATION=${OPERATION} ${PARAM_OVERRIDE_SCRIPT})
       else
         echo -e "Adding parameter overrides for ${deploy} ..."
-        SPECIALDEPLOYPARM="${SPECIALDEPLOYPARM} $(${PARAM_OVERRIDE_SCRIPT})"
+        SPECIALDEPLOYPARM="${SPECIALDEPLOYPARM} $(OPERATION=${OPERATION} ${PARAM_OVERRIDE_SCRIPT})"
       fi
     fi
 
