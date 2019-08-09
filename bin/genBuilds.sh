@@ -23,16 +23,14 @@ fi
 # ==============================================================================
 
 for component in ${components}; do
-  if [ ! -z "${COMP}" ] && [ ! "${COMP}" = ${component} ]; then
+  if [ ! -z "${COMP}" ] && [ ! "${component}" = "." ] && [ ! "${COMP}" = ${component} ]; then
     # Only process named component if -c option specified
     continue
   fi
 
   echo -e \\n"Configuring the ${TOOLS} environment for ${component} ..."\\n  
-  pushd ../${component}/openshift >/dev/null
   compBuilds.sh component
   exitOnError
-  popd >/dev/null
 done
 
 if [ ! -z "${COMP}" ]; then

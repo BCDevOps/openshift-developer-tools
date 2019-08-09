@@ -17,10 +17,7 @@ if [ ! -z "${DEBUG}" ]; then
   set -x
 fi
 
-# Get list of JSON files - could be in multiple directories below
-if [ -d "${TEMPLATE_DIR}" ]; then
-  BUILDS=$(getBuildTemplates ${TEMPLATE_DIR})
-fi
+BUILDS=$(getBuildTemplates $(getTemplateDir))
 
 # Switch to Tools Project
 switchProject ${TOOLS}
@@ -34,7 +31,8 @@ for build in ${BUILDS}; do
 
   _template="${build}"
   _template_basename=$(getFilenameWithoutExt ${build})
-  _buildConfig="${_template_basename}_BuildConfig.json"
+  _buildConfig="${_template_basename}${BUILD_CONFIG_SUFFIX}"
+  _searchPath=$(echo $(getDirectory "${_template}") | sed 's~\(^.*/openshift\).*~\1~')
 
   if [ ! -z "${PROFILE}" ]; then
     _paramFileName="${_template_basename}.${PROFILE}"
@@ -42,9 +40,9 @@ for build in ${BUILDS}; do
     _paramFileName="${_template_basename}"
   fi
 
-  PARAMFILE="${_paramFileName}.param"
+  PARAMFILE=$(find ${_searchPath} -name "${_paramFileName}.param")
   if [ ! -z "${APPLY_LOCAL_SETTINGS}" ]; then
-    LOCALPARAM="${LOCAL_PARAM_DIR}/${_paramFileName}.local.param"
+    LOCALPARAM=$(find ${_searchPath} -name "${_paramFileName}.local.param")
   fi
 
   if [ -f "${PARAMFILE}" ]; then

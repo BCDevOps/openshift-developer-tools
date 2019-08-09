@@ -326,6 +326,7 @@ if ! settingsLoaded; then
 
   # Build and deployment settings
   export DEPLOYMENT_CONFIG_SUFFIX="_DeploymentConfig.json"
+  export BUILD_CONFIG_SUFFIX="_BuildConfig.json"
   export OVERRIDE_PARAM_SUFFIX="overrides.param"
 
   # ===========================================================================================================
