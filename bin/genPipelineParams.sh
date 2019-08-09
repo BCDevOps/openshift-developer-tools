@@ -138,7 +138,6 @@ echo "Processing Jenkinsfiles"
 echo "-----------------------------------------------------------------------------------------------------------------"
 
 # Get list of all of the Jenkinsfiles in the project ...
-pushd ${PROJECT_DIR} >/dev/null
 JENKINS_FILES=$(getJenkinsFiles)
 
 # Generate pipeline parameter files for each one ...
@@ -148,7 +147,6 @@ for _jenkinsFile in ${JENKINS_FILES}; do
   generatePipelineParameterFile "${_jenkinsFile}" "${PIPELINE_JSON}" "${_outputPath}" "${FORCE}" "${COMMENTFILTER}" "${_parameterFilter}"
   exitOnError
 done
-popd >/dev/null
 echo "================================================================================================================="
 
 # Print informational messages ...
