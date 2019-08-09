@@ -350,7 +350,7 @@ getTemplateDir () {
       _simplePattern="^.*/openshift/${TEMPLATE_DIR}"
     else
       _compPattern="^.*/${_componentName}/*.*/*openshift/${TEMPLATE_DIR}"
-      _simplePattern="^.*/openshift/${TEMPLATE_DIR}/*.*/*${_componentName}"
+      _simplePattern="^.*/openshift/${TEMPLATE_DIR}/*.*/${_componentName}"
     fi
 
     _comResults=$(find ${_searchPath} -type d -regex "${_compPattern}")
