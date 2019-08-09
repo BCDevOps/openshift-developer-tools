@@ -224,7 +224,7 @@ if ! settingsLoaded; then
   _settingsFileName="settings"
   _settingsFileExt=".sh"
   _localProfileName="local"
-  _defaultProfileName="default"
+  export _defaultProfileName="default"
 
   # =================================================================================================================
   # Process the command line arguments:

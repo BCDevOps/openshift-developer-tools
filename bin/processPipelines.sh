@@ -13,8 +13,13 @@ fi
 # =================================================================================================================
 
 # Get list of all of the Jenkinsfiles in the project ...
-pushd ${PROJECT_DIR} >/dev/null
 JENKINS_FILES=$(getJenkinsFiles)
+
+# echo "Jenkins files:"
+# for _jenkinsFile in ${JENKINS_FILES}; do
+#   echo ${_jenkinsFile}
+# done
+# exit 1
 
 # Local params file path MUST be relative...Hack!
 _localParamsDir=openshift
@@ -26,6 +31,7 @@ for _jenkinsFile in ${JENKINS_FILES}; do
   _template="${PIPELINE_JSON}"
   _defaultParams=$(getPipelineParameterFileOutputPath "${_jenkinsFile}")
   _output="${_jenkinsFile}-pipeline${BUILD_CONFIG_SUFFIX}"
+
   if [ ! -z "${APPLY_LOCAL_SETTINGS}" ]; then
     _localParams=$(getPipelineParameterFileOutputPath "${_jenkinsFile}" "${_localParamsDir}")
   fi
@@ -54,4 +60,3 @@ for _jenkinsFile in ${JENKINS_FILES}; do
     rm ${_output}
   fi
 done
-popd >/dev/null

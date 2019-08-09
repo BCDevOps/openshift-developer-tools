@@ -27,7 +27,8 @@ fi
 # -----------------------------------------------------------------------------------------------------------------
 generateBuildConfigs() {
 
-  BUILDS=$(getBuildTemplates $(getTemplateDir))
+  # Suppress the error message from getBuildTemplates when no search path is returned by getTemplateDir
+  BUILDS=$(getBuildTemplates $(getTemplateDir) 2>/dev/null || "")
 
   # echo "Build templates:"
   # for build in ${BUILDS}; do

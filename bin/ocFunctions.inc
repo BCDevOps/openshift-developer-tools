@@ -17,7 +17,7 @@ echoWarning (){
   _msg=${1}
   _yellow='\033[1;33m'
   _nc='\033[0m' # No Color
-  echo -e "${_yellow}${_msg}${_nc}"
+  echo -e "${_yellow}${_msg}${_nc}" >&2
 }
 
 echoError (){
@@ -310,7 +310,18 @@ getSecretFiles () {
 }
 
 getJenkinsFiles () {
-  echo $(find . -name "*Jenkinsfile")
+  (
+    _componentName=${1:-${COMP}}
+    _searchPath=${2:-${PROJECT_DIR}}
+
+    if [ -z ${_componentName} ]; then
+      _searchPattern="^.*Jenkinsfile$"
+    else
+      _searchPattern="^.*/${_componentName}/*.*Jenkinsfile$"
+    fi
+
+    echo $(find ${_searchPath} -type f -regex "${_searchPattern}")
+  )
 }
 
 getConfigTemplates () {
@@ -320,7 +331,7 @@ getConfigTemplates () {
 getBuildTemplates () {
   _searchPath=${1}
    if [ -z "${_searchPath}" ]; then
-    echo -e \\n"getBuildTemplates; Missing parameter!"\\n
+    echoError \\n"getBuildTemplates; Missing parameter!"\\n
     exit 1
   fi
 
@@ -407,13 +418,7 @@ getJenkinsFileName () {
     exit 1
   fi
 
-  _jenkinsFile_FullName=${_jenkinsFilePath##*/}
-  _jenkinsFile_Name=${_jenkinsFilePath%.*}
-  if [ -z "${_jenkinsFile_Name}" ]; then
-    echo ${_jenkinsFile_FullName}
-  else
-    echo ${_jenkinsFile_Name}
-  fi
+  echo $(getFilenameWithoutExt ${_jenkinsFilePath})
 }
 
 isBuildConfig() {
@@ -457,7 +462,7 @@ getPipelineParameterFileOutputPath () {
   if [ -f "${_jenkinsFile}" ]; then
     _directory=$(getDirectory ${_jenkinsFile})
     _jenkinsFileName=$(getJenkinsFileName ${_jenkinsFile})
-    if [ ! -z "${PROFILE}" ]; then
+    if [ ! -z "${PROFILE}" ] && [ "${PROFILE}" != "${_defaultProfileName}" ]; then
       _name="${_jenkinsFileName}.${PROFILE}"
     else
       _name="${_jenkinsFileName}"

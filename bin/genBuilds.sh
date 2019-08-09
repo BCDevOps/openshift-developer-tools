@@ -33,13 +33,13 @@ for component in ${components}; do
   exitOnError
 done
 
+# Process the Jenkins Pipeline configurations ...
+processPipelines.sh
+
 if [ ! -z "${COMP}" ]; then
   # If only processing one component stop here.
   exit
 fi
-
-# Process the Jenkins Pipeline configurations ...
-processPipelines.sh
 
 if [ -z ${GEN_ONLY} ]; then
   # ==============================================================================
