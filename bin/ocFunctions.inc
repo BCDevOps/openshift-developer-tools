@@ -656,6 +656,23 @@ cleanConfigs() {
   done
 }
 
+getBuildConfigFiles() {
+  _configFiles=${@}
+  if [ ! -z "${_configFiles}" ]; then
+    echo "${_configFiles}"
+  else
+    find . -name "*${BUILD_CONFIG_SUFFIX}"
+  fi
+}
+
+cleanBuildConfigs() {
+  _configFiles=$(getBuildConfigFiles ${@})
+  for configFile in ${_configFiles}; do
+    echo -e \\t"Deleting build config file; ${configFile} ..."
+    rm ${configFile}
+  done
+}
+
 # Update route configuration including hostname
 updateRoutes() {
   (
@@ -709,6 +726,14 @@ deployConfigs() {
       oc $(getOcAction) -f ${configFile}
       exitOnError
     fi
+  done
+}
+
+deployBuildConfigs() {
+  _configFiles=$(getBuildConfigFiles ${@})
+  for configFile in ${_configFiles}; do
+    oc $(getOcAction) -f ${configFile}
+    exitOnError
   done
 }
 
