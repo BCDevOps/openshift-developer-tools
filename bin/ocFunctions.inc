@@ -329,13 +329,20 @@ getConfigTemplates () {
 }
 
 getBuildTemplates () {
-  _searchPath=${1}
-   if [ -z "${_searchPath}" ]; then
-    echoError \\n"getBuildTemplates; Missing parameter!"\\n
-    exit 1
-  fi
+  (
+    _searchPaths=${@}
+    if [ -z "${_searchPaths}" ]; then
+      echoError \\n"getBuildTemplates; Missing parameter!"\\n
+      exit 1
+    fi
 
-  echo $(find ${_searchPath} -regex "^.*\.\(json\|yaml\|yml\)" -exec grep -l "BuildConfig\|\"ImageStream\"\|kind:.ImageStream$" '{}' \;)
+    unset buildTemplates
+    for searchPath in ${_searchPaths}; do
+      buildTemplates+=" $(find ${searchPath} -regex "^.*\.\(json\|yaml\|yml\)" -exec grep -l "BuildConfig\|\"ImageStream\"\|kind:.ImageStream$" '{}' \;)"
+    done
+
+    echo ${buildTemplates}
+  )
 }
 
 getTemplateDir () {
