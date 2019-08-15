@@ -12,15 +12,6 @@ fi
 # -----------------------------------------------------------------------------------------------------------------
 # Initialization:
 # -----------------------------------------------------------------------------------------------------------------
-# Components can specify settings overrides ...
-# TODO:
-# Refactor how the component level overrides are loaded.
-# Load them like the Parameter overrides loaded from the PARAM_OVERRIDE_SCRIPT
-if [ -f ${_componentSettingsFileName} ]; then
-  echo -e "Loading component level settings from ${PWD}/${_componentSettingsFileName} ..."
-  . ${_componentSettingsFileName}
-fi
-
 if [ -f ${OCTOOLSBIN}/ocFunctions.inc ]; then
   . ${OCTOOLSBIN}/ocFunctions.inc
 fi
@@ -70,6 +61,12 @@ generateConfigs() {
     _deploymentConfig="${_template_basename}${DEPLOYMENT_CONFIG_SUFFIX}"
     _searchPath=$(echo $(getDirectory "${_template}") | sed 's~\(^.*/openshift\).*~\1~')
     PARAM_OVERRIDE_SCRIPT=$(find ${_searchPath} -name "${_template_basename}.overrides.sh")
+    _componentSettings=$(find ${_searchPath} -name "${_componentSettingsFileName}")
+
+    if [ ! -z ${_componentSettings} ] && [ -f ${_componentSettings} ]; then
+      echo -e "Loading component level settings from ${_componentSettings} ..."
+      . ${_componentSettings}
+    fi
 
     if [ ! -z "${PROFILE}" ]; then
       _paramFileName="${_template_basename}.${PROFILE}"
