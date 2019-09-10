@@ -12,41 +12,42 @@ Creates/Deletes a local project set in OpenShift
 ----------------------------------------------------------------------------------------
 Usage:
 
-  ${0} [-h -x -D]
+  ${0##*/} [options]
 
-  OPTIONS:
+  Options:
   ========
     -D delete the local projects created by this script.
-    -h prints the usage for the script
     -n <projectNamespace> the name of a project set
-    -p <profile> load a specific settings profile; setting.<profile>.sh
-    -P Use the default settings profile; settings.sh.  Use this flag to ignore all but the default 
-       settings profile when there is more than one settings profile defined for a project.    
-    
-    -x run the script in debug mode to see what's happening
-
-  Update settings.sh and settings.local.sh files to set defaults
 EOF
-exit 1
 }
 
-while getopts xhn:p:PD FLAG; do
-  case $FLAG in
-    D ) export DELETE_PROJECTS=1 ;;
-    x ) export DEBUG=1 ;;
-    n ) PROJECT_NAMESPACE=$OPTARG ;;
-    p ) export PROFILE=$OPTARG ;;
-    P ) export IGNORE_PROFILES=1 ;;
-    h ) usage ;;
-    \?) #unrecognized option - show help
-      echo -e \\n"Invalid script option"\\n
-      usage
-      ;;
-  esac
+# =================================================================================================================
+# Process the local command line arguments and pass everything else along.
+# - The 'getopts' options string must start with ':' for this to work.
+# -----------------------------------------------------------------------------------------------------------------
+while [ ${OPTIND} -le $# ]; do
+  if getopts :n:D FLAG; then
+    case ${FLAG} in
+      # List of local options:
+      D ) export DELETE_PROJECTS=1 ;;
+      n ) PROJECT_NAMESPACE=${OPTARG} ;;
+      
+      # Pass unrecognized options ...
+      \?) 
+        pass+=" -${OPTARG}"
+        ;;
+    esac
+  else
+    # Pass unrecognized arguments ...
+    pass+=" ${!OPTIND}"
+    let OPTIND++
+  fi
 done
 
-# Shift the parameters in case there any more to be used
+# Pass the unrecognized arguments along for further processing ...
 shift $((OPTIND-1))
+set -- "$@" $(echo -e "${pass}" | sed -e 's/^[[:space:]]*//')
+# =================================================================================================================
 
 if [ -f ${OCTOOLSBIN}/settings.sh ]; then
   . ${OCTOOLSBIN}/settings.sh
@@ -54,10 +55,6 @@ fi
 
 if [ -f ${OCTOOLSBIN}/ocFunctions.inc ]; then
   . ${OCTOOLSBIN}/ocFunctions.inc
-fi
-
-if [ ! -z "${DEBUG}" ]; then
-  set -x
 fi
 # ===================================================================================================
 

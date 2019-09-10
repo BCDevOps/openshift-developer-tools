@@ -6,43 +6,41 @@ usage() {
   cat <<-EOF
   Tags the project's images
 
-  Usage: $0 [ -h -x ] -s <source_tag> -t <destination_tag>
+  Usage:
+    ${0##*/} [options] -s <source_tag> -t <destination_tag>
 
-  OPTIONS:
+  Options:
   ========
     -s the source tag name
     -t the tag to apply
-    -p <profile> load a specific settings profile; setting.<profile>.sh
-    -P Use the default settings profile; settings.sh.  Use this flag to ignore all but the default 
-       settings profile when there is more than one settings profile defined for a project.        
-    -h prints the usage for the script
-    -x run the script in debug mode to see what's happening
-
-    Update settings.sh and settings.local.sh files to set defaults
 EOF
-exit 1
 }
 
-# In case you wanted to check what variables were passed
-# echo "flags = $*"
-while getopts p:Ps:t:hx FLAG; do
-  case $FLAG in
-    s) export SOURCE_TAG=$OPTARG ;;
-    t) export DESTINATION_TAG=$OPTARG ;;
-    p ) export PROFILE=$OPTARG ;;
-    P ) export IGNORE_PROFILES=1 ;;
-    x ) export DEBUG=1 ;;
-    h ) usage ;;
-    \?) #unrecognized option - show help
-      echo -e \\n"Invalid script option"\\n
-      usage
-      ;;
-  esac
+# =================================================================================================================
+# Process the local command line arguments and pass everything else along.
+# - The 'getopts' options string must start with ':' for this to work.
+# -----------------------------------------------------------------------------------------------------------------
+while [ ${OPTIND} -le $# ]; do
+  if getopts :s:t: FLAG; then
+    case ${FLAG} in
+      # List of local options:
+      s) export SOURCE_TAG=$OPTARG ;;
+      t) export DESTINATION_TAG=$OPTARG ;;
+
+      # Pass unrecognized options ...
+      \?) pass+=" -${OPTARG}" ;;
+    esac
+  else
+    # Pass unrecognized arguments ...
+    pass+=" ${!OPTIND}"
+    let OPTIND++
+  fi
 done
 
-# Shift the parameters in case there any more to be used
+# Pass the unrecognized arguments along for further processing ...
 shift $((OPTIND-1))
-# echo Remaining arguments: $@
+set -- "$@" $(echo -e "${pass}" | sed -e 's/^[[:space:]]*//')
+# =================================================================================================================
 
 if [ -f ${OCTOOLSBIN}/settings.sh ]; then
   . ${OCTOOLSBIN}/settings.sh
@@ -50,10 +48,6 @@ fi
 
 if [ -f ${OCTOOLSBIN}/ocFunctions.inc ]; then
   . ${OCTOOLSBIN}/ocFunctions.inc
-fi
-
-if [ ! -z "${DEBUG}" ]; then
-  set -x
 fi
 
 if [ -z "${SOURCE_TAG}" ] || [ -z "${DESTINATION_TAG}" ]; then

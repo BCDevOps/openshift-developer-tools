@@ -4,30 +4,60 @@ export MSYS_NO_PATHCONV=1
 # =================================================================================================================
 # Functions:
 # -----------------------------------------------------------------------------------------------------------------
+globalUsage() {
+  # Print the scripts useage first ...
+  usage
+
+  cat <<-EOF
+
+  Global Options:
+    - Note: Local script options will override global options.
+  ========
+    -h prints the usage for the script
+    -e <Environment> the environment (dev/test/prod) into which you are deploying (default: ${DEPLOYMENT_ENV_NAME})
+    -c <component> to generate parameters for templates of a specific component
+    -l apply local settings and parameters
+    -p <profile> load a specific settings profile; setting.<profile>.sh
+    -P Use the default settings profile; settings.sh.  Use this flag to ignore all but the default
+       settings profile when there is more than one settings profile defined for a project.
+    -k keep the json produced by processing the template
+    -u update OpenShift deployment configs instead of creating the configs
+    -x run the script in debug mode to see what's happening
+    -g process the templates and generate the configuration files, but do not create or update them
+       automatically set the -k option
+
+    Update settings.sh and settings.local.sh files to set defaults
+EOF
+  exit 1
+}
+
 echoWarning (){
-  _msg=${1}
+  _msg=${@}
   _yellow='\033[1;33m'
   _nc='\033[0m' # No Color
   echo -e "${_yellow}${_msg}${_nc}"
 }
 
 getProfiles() {
-  _profiles=$(find . -name "settings.*.sh" | sed 's~^.*settings.~~;s~.sh~~')
+  _profiles=$(find . -name "settings*.sh" | sed "s~^.*settings.~~;s~.sh~~;s~^sh~${_defaultProfileName}~")
   echo "${_profiles}"
-}
-
-isLocalProfile() {
-  _profiles=$(getProfiles)
-  _count=$(countProfiles ${_profiles})
-  if [[ ${_count} -le 1 && (-z "${_profiles}" || "${_profiles}" == "${_localProfileName}") ]]; then
-    return 0
-  else
-    return 1
-  fi
 }
 
 countProfiles() {
   echo "${#}"
+}
+
+profilesSettingsExist() {
+  (
+    _profiles=$(getProfiles)
+    _profileCount=$(countProfiles $(echo "${_profiles}" | sed "s~^${_defaultProfileName}~~;s~^${_localProfileName}~~"))
+
+    if (( ${_profileCount} >= 1 )); then
+      return 0
+    else
+      return 1
+    fi
+  )
 }
 
 profileExists()
@@ -44,37 +74,35 @@ profileExists()
 printProfiles() {
   _profiles=$(getProfiles)
   _count=$(countProfiles ${_profiles})
-  ((_count=_count+1))
   if [[ ${_count} -eq 1 ]]; then
     _profileDescription="profile"
   else
     _profileDescription="profiles"
   fi
 
-  echoWarning "=================================================================================================="
+  echoWarning "\n=================================================================================================="
   echoWarning "Warning:"
   echoWarning "Your project contains ${_count} ${_profileDescription}."
   echoWarning "Please select the profile you wish to use."
   echoWarning "--------------------------------------------------------------------------------------------------"
-  echoWarning "default - ${_settingsFileName}${_settingsFileExt}"
   for _profile in ${_profiles}; do
-    echoWarning "${_profile} - ${_settingsFileName}.${_profile}${_settingsFileExt}"
+    echoWarning "$(echo "${_profile} - ${_settingsFileName}.${_profile}${_settingsFileExt}" | sed "s~.${_defaultProfileName}~~")"
   done
-  echoWarning "=================================================================================================="  
+  echoWarning "=================================================================================================="
 }
 
 printSettingsFileNotFound() {
-  echoWarning "=================================================================================================="
+  echoWarning "\n=================================================================================================="
   echoWarning "Warning:"
   echoWarning "--------------------------------------------------------------------------------------------------"
   echoWarning "No project settings file (${_settingsFileName}${_settingsFileExt}) was found in '${PWD}'."
   echoWarning "Make sure you're running the script from your project's top level 'openshift' directory"
   echoWarning "and you have a 'settings.sh' file in that folder."
-  echoWarning "=================================================================================================="  
+  echoWarning "=================================================================================================="
 }
 
 printLocalSettingsFileNotFound() {
-  echo "=================================================================================================="
+  echo -e "\n=================================================================================================="
   echo "Information:"
   echo "--------------------------------------------------------------------------------------------------"
   echo "You've specified you want to apply local profile settings, but no local profile settings"
@@ -84,91 +112,171 @@ printLocalSettingsFileNotFound() {
 }
 
 printProfileNotFound() {
-  echoWarning "=================================================================================================="
+  _profiles=$(getProfiles)
+  _count=$(countProfiles ${_profiles})
+
+  echoWarning "\n=================================================================================================="
   echoWarning "Warning:"
   echoWarning "--------------------------------------------------------------------------------------------------"
-  echoWarning "The selected settings profile does not exist. Please select from one of the available profiles."
-  echoWarning "=================================================================================================="  
+  echoWarning "The selected settings profile (${_settingsFileName}.${PROFILE}${_settingsFileExt}) does not exist."
+  echoWarning "Please select from one of the available profiles."
+  echoWarning "--------------------------------------------------------------------------------------------------"
+  for _profile in ${_profiles}; do
+    echoWarning "$(echo "${_profile} - ${_settingsFileName}.${_profile}${_settingsFileExt}" | sed "s~.${_defaultProfileName}~~")"
+  done
+  echoWarning "=================================================================================================="
 }
 
 validateSettings() {
   unset _error
-  unset _profileExists
-  unset _isLocalProfile
-  unset _applyProjectSettings
-  unset _applyProfileSettings
-  unset _applyLocalSettings
 
-  # Validate default project settings ...
-  if [ -f ${_settingsFile} ]; then
-    _applyProjectSettings=0
-  else
-    _error=0
-    printSettingsFileNotFound
+  if [ -z "${IGNORE_PROFILES}" ] && [ -z "${PROFILE}" ] && profilesSettingsExist; then
+      _error=0
+    printProfiles
   fi
 
-  # Validate project profile settings ...
-  if [ -z ${IGNORE_PROFILES} ]; then  
-    if profileExists "${PROFILE}"; then
-      _profileExists=0
-    fi
-
-    if isLocalProfile; then
-      _isLocalProfile=0
-    fi
-
-    if [[ ! -z "${PROFILE}" && ${_profileExists} ]]; then
-      _applyProfileSettings=0
-    elif [[ -z "${PROFILE}" && ! ${_isLocalProfile} ]]; then
+  # Load settings in order
+  # 1. settings.sh
+  if [ ! ${_error} ]; then
+    if profileExists "${_defaultProfileName}"; then
+      _settingsFiles="${_settingsFiles} ./${_settingsFileName}${_settingsFileExt}"
+    else
       _error=0
-      printProfiles
-    elif [ ! ${_profileExists} ]; then
+      printSettingsFileNotFound
+    fi
+  fi
+
+  # 2. settings.${PROFILE}.sh
+  if [ ! ${_error} ] && [ -z "${IGNORE_PROFILES}" ]; then
+    if [ ! -z "${PROFILE}" ] && [ "${PROFILE}" != "${_defaultProfileName}" ] && profileExists ${PROFILE}; then
+      _settingsFiles="${_settingsFiles} ./${_settingsFileName}.${PROFILE}${_settingsFileExt}"
+    elif [ ! -z "${PROFILE}" ] && [ "${PROFILE}" != "${_defaultProfileName}" ]; then
       _error=0
       printProfileNotFound
     fi
   fi
 
-  # Validate local project settings ...
-  if [ ! -z "${APPLY_LOCAL_SETTINGS}" ] && [ -f "${_settingsFileName}.${_localProfileName}${_settingsFileExt}" ]; then
-    _applyLocalSettings=0
-  elif [ ! -z "${APPLY_LOCAL_SETTINGS}" ] && [ ! -f "${_settingsFileName}.${_localProfileName}${_settingsFileExt}" ]; then
-    _error=0
-    printLocalSettingsFileNotFound
+  # 3. settings.local.sh
+  if [ ! ${_error} ]; then
+    if [ ! -z "${APPLY_LOCAL_SETTINGS}" ] && profileExists "${_localProfileName}"; then
+      _settingsFiles="${_settingsFiles} ./${_settingsFileName}.${_localProfileName}${_settingsFileExt}"
+    elif [ ! -z "${APPLY_LOCAL_SETTINGS}" ]; then
+      _error=0
+      printLocalSettingsFileNotFound
+    fi
   fi
 
+  export SETTINGS_FILES=${_settingsFiles}
+
   if [ ! ${_error} ]; then
-    # Load settings in order    
-    # 1. settings.sh
-    if [ ${_applyProjectSettings} ]; then
-      _settingsFiles="${_settingsFiles} ./${_settingsFileName}${_settingsFileExt}"
-    fi
-
-    # 2. settings.${PROFILE}.sh
-    if [ ${_applyProfileSettings} ]; then
-      _settingsFiles="${_settingsFiles} ./${_settingsFileName}.${PROFILE}${_settingsFileExt}"
-    fi
-
-    # 3. settings.local.sh
-    if [ ${_applyLocalSettings} ]; then
-      _settingsFiles="${_settingsFiles} ./${_settingsFileName}.${_localProfileName}${_settingsFileExt}"
-    fi
-
-    export SETTINGS_FILES=${_settingsFiles}
     return 0
   else
     return 1
   fi
+}
+
+settingsLoaded() {
+  (
+    if [ -z "${SETTINGS_LOADED}" ]; then
+      return 1
+    else
+      return 0
+    fi
+  )
+}
+
+ensureRequiredOptionsExist() {
+  (
+    # Call the 'onRequiredOptionsExist' hook if defined ...
+    if type onRequiredOptionsExist &>/dev/null; then
+      if onRequiredOptionsExist; then
+        return 0
+      else
+        return 1
+      fi
+    else
+      return 0
+    fi
+  )
+}
+
+usesCommandLineArguments() {
+  (
+    # Call the 'onUsesCommandLineArguments' hook if defined ...
+    if type onUsesCommandLineArguments &>/dev/null; then
+      if onUsesCommandLineArguments; then
+        return 0
+      else
+        return 1
+      fi
+    else
+      return 1
+    fi
+  )
 }
 # =================================================================================================================
 
 # =================================================================================================================
 # Main Script:
 # -----------------------------------------------------------------------------------------------------------------
-if [ -z "${SETTINGS_LOADED}" ]; then
+if ! settingsLoaded; then
   export _componentSettingsFileName=component.settings.sh
   _settingsFileName="settings"
   _settingsFileExt=".sh"
   _localProfileName="local"
+  export _defaultProfileName="default"
+
+  # =================================================================================================================
+  # Process the command line arguments:
+  # - In case you wanted to check what variables were passed; echo "flags = $*"
+  # -----------------------------------------------------------------------------------------------------------------
+  OPTIND=1
+  unset pass
+  while [ ${OPTIND} -le $# ]; do
+    if getopts :p:Pc:e:lukxhg FLAG; then
+      case $FLAG in
+        h ) globalUsage ;;
+        c ) export COMP=$OPTARG ;;
+        p ) export PROFILE=$OPTARG ;;
+        P ) export IGNORE_PROFILES=1 ;;
+        e ) export DEPLOYMENT_ENV_NAME=$OPTARG ;;
+        l ) export APPLY_LOCAL_SETTINGS=1 ;;
+        u ) export OPERATION=update ;;
+        k ) export KEEPJSON=1 ;;
+        x ) export DEBUG=1 ;;
+        g )
+          export KEEPJSON=1
+          export GEN_ONLY=1
+          ;;
+
+        # Collect unrecognized options ...
+        \?) pass+=" -${OPTARG}" ;;
+      esac
+    else
+      # Collect unrecognized arguments ...
+      pass+=" ${!OPTIND}"
+      let OPTIND++
+    fi
+  done
+  # Pass the unrecognized arguments along for further processing ...
+  shift $((OPTIND-1))
+  set -- "$@" $(echo -e "${pass}" | sed -e 's/^[[:space:]]*//')
+  OPTIND=1
+  unset pass
+
+  if [[ ! -z "${@}" ]] && ! usesCommandLineArguments; then
+    echoWarning "\nUnexpected command line argument(s) were supplied; [${@}]."
+    echoWarning "If your script is expecting these argument(s) you can turn off the warning by implementing the 'onUsesCommandLineArguments' hook in your script before the main settings script is loaded.  The hook should return 0 if you are expecting arguments."
+  fi
+  # =================================================================================================================
+
+  if [ ! -z "${DEBUG}" ]; then
+    set -x
+  fi
+
+  if ! ensureRequiredOptionsExist; then
+    globalUsage
+  fi
 
   if validateSettings; then
     # Load settings ...
@@ -178,7 +286,7 @@ if [ -z "${SETTINGS_LOADED}" ]; then
       echo -e "Loading settings from ${PWD}/${_settingsFile##*/} ..."
       . ${_settingsFile}
     done
-  else 
+  else
     echoWarning \\n"Your settings are invalid.  Please review the previous messages to correct the errors."
     exit 1
   fi
@@ -190,7 +298,7 @@ if [ -z "${SETTINGS_LOADED}" ]; then
   export PROJECT_DIR=${PROJECT_DIR:-..}
   export PROJECT_OS_DIR=${PROJECT_OS_DIR:-.}
 
-  export OC_ACTION=${OC_ACTION:-create}
+  export OPERATION=${OPERATION:-create}
   export DEV=${DEV:-dev}
   export TEST=${TEST:-test}
   export PROD=${PROD:-prod}
@@ -218,6 +326,7 @@ if [ -z "${SETTINGS_LOADED}" ]; then
 
   # Build and deployment settings
   export DEPLOYMENT_CONFIG_SUFFIX="_DeploymentConfig.json"
+  export BUILD_CONFIG_SUFFIX="_BuildConfig.json"
   export OVERRIDE_PARAM_SUFFIX="overrides.param"
 
   # ===========================================================================================================

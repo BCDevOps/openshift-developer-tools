@@ -17,14 +17,14 @@ echoWarning (){
   _msg=${1}
   _yellow='\033[1;33m'
   _nc='\033[0m' # No Color
-  echo -e "${_yellow}${_msg}${_nc}"
+  echo -e "${_yellow}${_msg}${_nc}" >&2
 }
 
 echoError (){
   _msg=${1}
   _red='\033[0;31m'
   _nc='\033[0m' # No Color
-  echo -e "${_red}${_msg}${_nc}"
+  echo -e "${_red}${_msg}${_nc}" >&2
 }
 
 printAndWait() {
@@ -67,6 +67,52 @@ exitOnError() {
     # If we get here the user did NOT press Ctrl-C ...
     return 0
   fi
+}
+
+getOperation() {
+  (
+    echo $(toLower ${OPERATION})
+  )
+}
+
+createOperation() {
+  (
+    action=$(getOperation)
+    if [ ${action} = "create" ]; then
+      return 0
+    else
+      return 1
+    fi
+  )
+}
+
+updateOperation() {
+  (
+    action=$(getOperation)
+    if [ ${action} = "update" ]; then
+      return 0
+    else
+      return 1
+    fi
+  )
+}
+
+getOcAction() {
+  (
+    unset _action
+
+    if createOperation; then
+      # --save-config - Maintains compatibility with 'oc apply'
+      _action="create --save-config"
+    elif updateOperation; then
+      _action="apply"
+    else
+      echoError "\nUnrecognized oc action, $(getOperation).\n"
+      exit 1
+    fi
+
+    echo "${_action}"
+  )
 }
 
 isLocalCluster (){
@@ -264,7 +310,18 @@ getSecretFiles () {
 }
 
 getJenkinsFiles () {
-  echo $(find . -name "*Jenkinsfile")
+  (
+    _componentName=${1:-${COMP}}
+    _searchPath=${2:-${PROJECT_DIR}}
+
+    if [ -z ${_componentName} ]; then
+      _searchPattern="^.*Jenkinsfile$"
+    else
+      _searchPattern="^.*/${_componentName}/*.*Jenkinsfile$"
+    fi
+
+    echo $(find ${_searchPath} -type f -regex "${_searchPattern}")
+  )
 }
 
 getConfigTemplates () {
@@ -272,23 +329,66 @@ getConfigTemplates () {
 }
 
 getBuildTemplates () {
-  _searchPath=${1}
-   if [ -z "${_searchPath}" ]; then
-    echo -e \\n"getBuildTemplates; Missing parameter!"\\n
-    exit 1
-  fi
+  (
+    _searchPaths=${@}
+    if [ -z "${_searchPaths}" ]; then
+      echoError \\n"getBuildTemplates; Missing parameter!"\\n
+      exit 1
+    fi
 
-  echo $(find ${_searchPath} -regex "^.*\.\(json\|yaml\|yml\)" -exec grep -l "BuildConfig\|\"ImageStream\"\|kind:.ImageStream$" '{}' \; | xargs | sed "s/\.\///g")
+    unset buildTemplates
+    for searchPath in ${_searchPaths}; do
+      buildTemplates+=" $(find ${searchPath} -regex "^.*\.\(json\|yaml\|yml\)" -exec grep -l "BuildConfig\|\"ImageStream\"\|kind:.ImageStream$" '{}' \;)"
+    done
+
+    echo ${buildTemplates}
+  )
+}
+
+getTemplateDir () {
+  (
+    _componentName=${1:-${COMP}}
+    _searchPath=${2:-${PROJECT_DIR}}
+    unset _comResults
+    unset _simpleResults
+
+    if [ -z ${_componentName} ]; then
+      _compPattern="^.*/openshift/${TEMPLATE_DIR}"
+      _simplePattern="^.*/openshift/${TEMPLATE_DIR}"
+    else
+      _compPattern="^.*/${_componentName}/*.*/*openshift/${TEMPLATE_DIR}"
+      _simplePattern="^.*/openshift/${TEMPLATE_DIR}/*.*/${_componentName}"
+    fi
+
+    _comResults=$(find ${_searchPath} -type d -regex "${_compPattern}")
+    if [ ! "${_compPattern}" = "${_simplePattern}" ]; then
+      _simpleResults=$(find ${_searchPath} -type d -regex "${_simplePattern}")
+    fi
+
+    _results=${_comResults}
+    if [ ! -z "${_simpleResults}" ] &&  [ ! "${_comResults}" = "${_simpleResults}" ]; then
+      _results+=" ${_simpleResults}"
+    fi
+
+    echo ${_results}
+  )
 }
 
 getDeploymentTemplates () {
-  _searchPath=${1}
-   if [ -z "${_searchPath}" ]; then
-    echo -e \\n"getDeploymentTemplates; Missing parameter!"\\n
-    exit 1
-  fi
+  (
+    _searchPaths=${@}
+    if [ -z "${_searchPaths}" ]; then
+      echoError \\n"getDeploymentTemplates; Missing parameter!"\\n
+      exit 1
+    fi
 
-  echo $(find ${_searchPath} -regex "^.*\.\(json\|yaml\|yml\)" -exec grep -l "DeploymentConfig\|Route" '{}' \; | xargs | sed "s/\.\///g")
+    unset deploymentTemplates
+    for searchPath in ${_searchPaths}; do
+      deploymentTemplates+=" $(find ${searchPath} -regex "^.*\.\(json\|yaml\|yml\)" -exec grep -l "DeploymentConfig\|Route" '{}' \;)"
+    done
+
+    echo ${deploymentTemplates}
+  )
 }
 
 getComponentNameFromDir () {
@@ -325,13 +425,7 @@ getJenkinsFileName () {
     exit 1
   fi
 
-  _jenkinsFile_FullName=${_jenkinsFilePath##*/}
-  _jenkinsFile_Name=${_jenkinsFilePath%.*}
-  if [ -z "${_jenkinsFile_Name}" ]; then
-    echo ${_jenkinsFile_FullName}
-  else
-    echo ${_jenkinsFile_Name}
-  fi
+  echo $(getFilenameWithoutExt ${_jenkinsFilePath})
 }
 
 isBuildConfig() {
@@ -375,7 +469,7 @@ getPipelineParameterFileOutputPath () {
   if [ -f "${_jenkinsFile}" ]; then
     _directory=$(getDirectory ${_jenkinsFile})
     _jenkinsFileName=$(getJenkinsFileName ${_jenkinsFile})
-    if [ ! -z "${PROFILE}" ]; then
+    if [ ! -z "${PROFILE}" ] && [ "${PROFILE}" != "${_defaultProfileName}" ]; then
       _name="${_jenkinsFileName}.${PROFILE}"
     else
       _name="${_jenkinsFileName}"
@@ -574,6 +668,23 @@ cleanConfigs() {
   done
 }
 
+getBuildConfigFiles() {
+  _configFiles=${@}
+  if [ ! -z "${_configFiles}" ]; then
+    echo "${_configFiles}"
+  else
+    find . -name "*${BUILD_CONFIG_SUFFIX}"
+  fi
+}
+
+cleanBuildConfigs() {
+  _configFiles=$(getBuildConfigFiles ${@})
+  for configFile in ${_configFiles}; do
+    echo -e \\t"Deleting build config file; ${configFile} ..."
+    rm ${configFile}
+  done
+}
+
 # Update route configuration including hostname
 updateRoutes() {
   (
@@ -594,7 +705,13 @@ updateRoutes() {
     routeConfigLength=$(echo ${routeConfig} | jq '.items[] | length')
     if [ ! -z "${routeConfigLength}" ]; then
       # The hostname on a route is immutable, so the route needs to be deleted and replaced ...
-      echo ${routeConfig} | oc ${OC_ACTION} --force -f -
+      # 'oc apply' will not delete and replace the route even if --force is used.
+      # 'oc apply' will not update the host field if it has changed.
+      # Therefore, 'oc replace' needs to be used to update the route.
+      #
+      # --force - Forces the delete and replace
+      # --save-config - Maintains compatibility with 'oc apply'
+      echo ${routeConfig} | oc replace --force --save-config -f -
       exitOnError
     fi
   )
@@ -604,7 +721,7 @@ deployConfigs() {
   _configFiles=$(getConfigFiles ${@})
   for configFile in ${_configFiles}; do
 
-    if [ ${OC_ACTION} = "replace" ]; then
+    if updateOperation; then
       # Update existing routes first ...
       updateRoutes ${configFile}
 
@@ -615,12 +732,20 @@ deployConfigs() {
         exit 0
       fi
 
-      echo "${config}" | oc ${OC_ACTION} -f -
+      echo "${config}" | oc $(getOcAction) -f -
       exitOnError
     else
-      oc ${OC_ACTION} -f ${configFile}
+      oc $(getOcAction) -f ${configFile}
       exitOnError
     fi
+  done
+}
+
+deployBuildConfigs() {
+  _configFiles=$(getBuildConfigFiles ${@})
+  for configFile in ${_configFiles}; do
+    oc $(getOcAction) -f ${configFile}
+    exitOnError
   done
 }
 
@@ -766,8 +891,10 @@ getCertificatePatch() {
   (
     certPath=${1}
     pkPath=${2}
-    if [ ! -f ${certPath} ]  || [ ! -f ${pkPath} ]; then
-      echo -e \\n"getCertificatePatch; Unable to locate one of the required files!"\\n
+    if [ ! -f ${certPath} ] || [ ! -f ${pkPath} ]; then
+      echoWarning "getCertificatePatch; Unable to locate one of the required files!" >&2
+      echoWarning "Certificate: ${certPath}" >&2
+      echoWarning "Private Key: ${pkPath}"\\n >&2
       exit 1
     fi
 
@@ -792,6 +919,18 @@ isProjectRoute() {
       return 0
     else
       return 1
+    fi
+  )
+}
+
+deployCertificates() {
+  (
+    configFile=${1:-certificate.conf}
+    projectName=$(getProjectName)
+    if [ ! -z ${configFile} ] && [ -f ${configFile} ]; then
+      echo -e \\n"Found ${configFile} file, attempting to install certificates ..."
+      routes=$(readConf ${configFile})
+      installCertificates "${projectName}" "${routes}"
     fi
   )
 }
@@ -841,8 +980,14 @@ installCertificate() {
     resourceType="route"
     echo "Installing certificate [${certPath}] and private key [${pkPath}] on route [${routeName}] in project [${projectName}] ..."
 
+    unset certPatch
     certPatch=$(getCertificatePatch "${certPath}" "${pkPath}")
-    eval oc -n ${projectName} patch ${resourceType} ${routeName} -p ${certPatch}
+
+    if [ ! -z "${certPatch}" ]; then
+      eval oc -n ${projectName} patch ${resourceType} ${routeName} -p ${certPatch}
+    else
+      echoError "Unable to install the certificate.  To install the certificate please ensure copies of the certificate and private key exist in the specified location."
+    fi
   )
 }
 

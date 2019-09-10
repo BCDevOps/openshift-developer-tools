@@ -9,46 +9,45 @@ usage() {
   cat <<-EOF
   Tool to generate OpenShift template parameters files in expected places (project or local) for BC Gov applications.
 
-  Usage: ./genParams.sh [ -h -f -l -x -c <component> ]
+  Usage:
+    ${0##*/} [options]
 
-  OPTIONS:
+  Options:
   ========
-    -h prints the usage for the script
     -f force generation even if the file already exists
-    -l generate local params files - with all parameters commented out
-    -c <component> to generate parameters for templates of a specific component
-    -p <profile> load a specific settings profile; setting.<profile>.sh
-    -P Use the default settings profile; settings.sh.  Use this flag to ignore all but the default 
-       settings profile when there is more than one settings profile defined for a project.        
-    -x run the script in debug mode to see what's happening
-
-    Update settings.sh and settings.local.sh files to set defaults
-
 EOF
-exit
 }
+
 # -----------------------------------------------------------------------------------------------------------------
 # Initialization:
 # -----------------------------------------------------------------------------------------------------------------
 
-while getopts p:Pc:flxh FLAG; do
-  case $FLAG in
-    c ) COMP=$OPTARG ;;
-    p ) export PROFILE=$OPTARG ;;
-    P ) export IGNORE_PROFILES=1 ;;    
-    f ) FORCE=1 ;;
-    l ) export APPLY_LOCAL_SETTINGS=1 ;;
-    x ) export DEBUG=1 ;;
-    h ) usage ;;
-    \?) #unrecognized option - show help
-      echo -e \\n"Invalid script option"\\n
-      usage
-      ;;
-  esac
+# =================================================================================================================
+# Process the local command line arguments and pass everything else along.
+# - The 'getopts' options string must start with ':' for this to work.
+# -----------------------------------------------------------------------------------------------------------------
+while [ ${OPTIND} -le $# ]; do
+  if getopts :f FLAG; then
+    case ${FLAG} in
+      # List of local options:
+      f ) FORCE=1 ;;
+      
+      # Pass unrecognized options ...
+      \?) 
+        pass+=" -${OPTARG}"
+        ;;
+    esac
+  else
+    # Pass unrecognized arguments ...
+    pass+=" ${!OPTIND}"
+    let OPTIND++
+  fi
 done
 
-# Shift the parameters in case there any more to be used
+# Pass the unrecognized arguments along for further processing ...
 shift $((OPTIND-1))
+set -- "$@" $(echo -e "${pass}" | sed -e 's/^[[:space:]]*//')
+# =================================================================================================================
 
 if [ -f ${OCTOOLSBIN}/settings.sh ]; then
   . ${OCTOOLSBIN}/settings.sh
@@ -58,17 +57,13 @@ if [ -f ${OCTOOLSBIN}/ocFunctions.inc ]; then
   . ${OCTOOLSBIN}/ocFunctions.inc
 fi
 
-# Debug mode
-if [ ! -z "${DEBUG}" ]; then
-  set -x
-fi
-
 # What types of files to generate - regular+dev/test/prod or local
 if [ ! -z "${APPLY_LOCAL_SETTINGS}" ]; then
   PARM_TYPES="l"
 else
   PARM_TYPES="r d t p"
 fi
+
 # -----------------------------------------------------------------------------------------------------------------
 # Function(s):
 # -----------------------------------------------------------------------------------------------------------------

@@ -2,11 +2,6 @@
 
 OCTOOLSBIN=$(dirname $0)
 
-if [ -z "${OC_ACTION}" ]; then
-  echo -e \\n"Missing parameter."\\n
-  exit 1
-fi
-
 if [ -f ${OCTOOLSBIN}/ocFunctions.inc ]; then
   . ${OCTOOLSBIN}/ocFunctions.inc
 fi
@@ -18,8 +13,13 @@ fi
 # =================================================================================================================
 
 # Get list of all of the Jenkinsfiles in the project ...
-pushd ${PROJECT_DIR} >/dev/null
 JENKINS_FILES=$(getJenkinsFiles)
+
+# echo "Jenkins files:"
+# for _jenkinsFile in ${JENKINS_FILES}; do
+#   echo ${_jenkinsFile}
+# done
+# exit 1
 
 # Local params file path MUST be relative...Hack!
 _localParamsDir=openshift
@@ -30,7 +30,8 @@ for _jenkinsFile in ${JENKINS_FILES}; do
 
   _template="${PIPELINE_JSON}"
   _defaultParams=$(getPipelineParameterFileOutputPath "${_jenkinsFile}")
-  _output="${_jenkinsFile}-pipeline_BuildConfig.json"  
+  _output="${_jenkinsFile}-pipeline${BUILD_CONFIG_SUFFIX}"
+
   if [ ! -z "${APPLY_LOCAL_SETTINGS}" ]; then
     _localParams=$(getPipelineParameterFileOutputPath "${_jenkinsFile}" "${_localParamsDir}")
   fi
@@ -50,7 +51,7 @@ for _jenkinsFile in ${JENKINS_FILES}; do
   oc process --filename=${_template} ${_localParams} ${_defaultParams} > ${_output}
   exitOnError
   if [ -z ${GEN_ONLY} ]; then
-    oc ${OC_ACTION} -f ${_output}
+    oc $(getOcAction) -f ${_output}
     exitOnError
   fi
 
@@ -59,4 +60,3 @@ for _jenkinsFile in ${JENKINS_FILES}; do
     rm ${_output}
   fi
 done
-popd >/dev/null

@@ -36,48 +36,10 @@ usage() {
     ./openshift/secrets/server-secret/regions.json
     ./openshift/secrets/server-secret/users.json 
 
-  Usage: $0 [ -h -u -k -g -x ]
-
-  OPTIONS:
-  ========
-    -h prints the usage for the script
-    -e <Environment> the environment (dev/test/prod) into which you are deploying (default: ${DEPLOYMENT_ENV_NAME})
-    -u update OpenShift build configs vs. creating the configs
-    -k keep the json produced by processing the template
-    -x run the script in debug mode to see what's happening
-    -g process the templates and generate the configuration files, but do not create or update them
-       automatically set the -k option
-    -p <profile> load a specific settings profile; setting.<profile>.sh
-    -P Use the default settings profile; settings.sh.  Use this flag to ignore all but the default 
-       settings profile when there is more than one settings profile defined for a project.    
-
-    Update settings.sh and settings.local.sh files to set defaults
+  Usage:
+    ${0##*/} [options]
 EOF
-exit 1
 }
-# -----------------------------------------------------------------------------------------------------------------
-# Initialization:
-# -----------------------------------------------------------------------------------------------------------------
-while getopts p:Pe:ukxhg FLAG; do
-  case $FLAG in
-    e ) export DEPLOYMENT_ENV_NAME=$OPTARG ;;
-    u ) export OC_ACTION=replace ;;
-    k ) export KEEPJSON=1 ;;
-    x ) export DEBUG=1 ;;
-    g ) export KEEPJSON=1
-        export GEN_ONLY=1
-      ;;
-    p ) export PROFILE=$OPTARG ;;
-    P ) export IGNORE_PROFILES=1 ;;
-    h ) usage ;;
-    \?) #unrecognized option - show help
-      echo -e \\n"Invalid script option"\\n
-      usage
-      ;;
-  esac
-done
-
-shift $((OPTIND-1))
 
 if [ -f ${OCTOOLSBIN}/settings.sh ]; then
   . ${OCTOOLSBIN}/settings.sh
@@ -87,9 +49,6 @@ if [ -f ${OCTOOLSBIN}/ocFunctions.inc ]; then
   . ${OCTOOLSBIN}/ocFunctions.inc
 fi
 
-if [ ! -z "${DEBUG}" ]; then
-  set -x
-fi
 # -----------------------------------------------------------------------------------------------------------------
 # Function(s):
 # -----------------------------------------------------------------------------------------------------------------
@@ -196,7 +155,7 @@ processSecret () {
   fi
 
   if [ -z ${GEN_ONLY} ]; then
-    oc ${OC_ACTION} -f ${_configFile}
+    oc $(getOcAction) -f ${_configFile}
     exitOnError
   fi
 
