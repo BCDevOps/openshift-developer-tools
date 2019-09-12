@@ -1168,6 +1168,19 @@ deletePostgreSqlDatabase() {
   echo "-----------------------------------------------------------------------------"
   deleteFromPod "${_databasePodName}" "${_dataDirectory}"
 }
+
+getPostgreSqlDatabaseDiskUsage() {
+  # This function opperates on a PostgreSql database on a remote pod.
+  # You must specify the friendly name of the pod hosting the database.
+  _databasePodName=${1}
+  _dataDirectory=${2:-"/var/lib/pgsql/data"}
+  if [ -z "${_databasePodName}" ]; then
+    echoError \\n"getPostgreSqlDatabaseDiskUsage; Missing parameter!"\\n
+    exit 1
+  fi
+
+  runInContainer "${_databasePodName}" "df -h ${_dataDirectory}"
+}
 # =================================================================================================================
 
 # =================================================================================================================
