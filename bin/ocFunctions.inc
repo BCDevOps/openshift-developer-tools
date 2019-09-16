@@ -1185,6 +1185,72 @@ getPostgreSqlDatabaseDiskUsage() {
 
   runInContainer "${_databasePodName}" "df -h ${_dataDirectory}"
 }
+
+function getRecordCounts() {
+  # -------------------------------------------------------------------------------
+  # Get a list of record counts for a given database.
+  # Produces a list of tables with the total number of records in each table
+  # -------------------------------------------------------------------------------
+  _dbPodName=${1}
+  _databaseName=${2}
+  if [ -z "${_dbPodName}" ]; then
+    echoError "\ngetRecordCounts; You MUST specify the name of the database pod.\n"
+    exit 1
+  fi
+
+  if [ -z ${_databaseName} ]; then
+    _databaseName="\${POSTGRESQL_DATABASE}"
+  fi
+
+  command='
+    create or replace function 
+    count_rows(schema text, tablename text) returns integer
+    as
+    \$body$
+    declare
+      result integer;
+      query varchar;
+    begin
+      query := '"'"'SELECT count(1) FROM '"'"' || schema || '"'"'.'"'"' || tablename;
+      execute query into result;
+      return result;
+    end;
+    \$body$
+    language plpgsql;
+  '
+  runInContainer \
+    ${_dbPodName}${resourceSuffix} \
+    "psql -d "${_databaseName}" -q -c \"${command}\""
+
+  echo
+  command='
+    select 
+      table_schema,
+      table_name, 
+      count_rows(table_schema, table_name)
+    from information_schema.tables
+    where 
+      table_schema not in ('"'"'pg_catalog'"'"', '"'"'information_schema'"'"') 
+      and table_type='"'"'BASE TABLE'"'"'
+    order by 3 desc;  
+  '
+  runInContainer \
+    ${_dbPodName}${resourceSuffix} \
+    "psql -d "${_databaseName}" -c \"${command}\""
+}
+
+function listDatabases() {
+  _dbPodName=${1}
+  if [ -z "${_dbPodName}" ]; then
+    echoError "\nlistDatabases; You MUST specify the name of the database pod.\n"
+    exit 1
+  fi
+
+  echo
+  runInContainer \
+    ${_dbPodName}${resourceSuffix} \
+    'psql -c "\l"'
+}
 # =================================================================================================================
 
 # =================================================================================================================
