@@ -834,6 +834,10 @@ getPodByName() {
       _podInstanceName=$(getPodNameByLabel "${_podName}" "app" "${_podIndex}")
     fi
 
+    if [ -z "${_podInstanceName}" ]; then
+      echoWarning "\ngetPodByName; a running instance of '${_podName}' was not found.\n"
+    fi
+
     echo ${_podInstanceName}
   )
 }
