@@ -596,7 +596,7 @@ deleteFromPod() {
 }
 
 getProjectName() {
-  _projectName=${1:-${PROJECT_NAMESPACE}-${DEPLOYMENT_ENV_NAME}}
+  _projectName=${1:-${FULLY_QUALIFIED_NAMESPACE:-${PROJECT_NAMESPACE}-${DEPLOYMENT_ENV_NAME}}}
   echo "${_projectName}"
 }
 
