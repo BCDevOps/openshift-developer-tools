@@ -264,6 +264,7 @@ appendParametersToFile (){
     sed '1d' | \
     awk -F'[ ]{2,}' '{ print $1 "=" $NF }' | \
     sed 's~\(^GITHUB_WEBHOOK_SECRET=.*$\)~#\1~' | \
+    sed 's~\(^GENERIC_WEBHOOK_SECRET=.*$\)~#\1~' | \
     sed 's~\(^DJANGO_SECRET_KEY=.*$\)~#\1~' | \
     ${_gitUrlFilter} | \
     ${_gitRefFilter} | \
