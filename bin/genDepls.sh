@@ -34,16 +34,31 @@ if [ -f ${OCTOOLSBIN}/ocFunctions.inc ]; then
 fi
 # ==============================================================================
 
+# Switch to desired project space ...
+echo
+switchProject
+exitOnError
+
+echo -e \\n"Removing dangling configuration files ..."
+cleanConfigs
+cleanOverrideParamFiles
+
 for component in ${components}; do
   if [ ! -z "${COMP}" ] && [ ! "${component}" = "." ] && [ ! "${COMP}" = ${component} ]; then
     # Only process named component if -c option specified
     continue
   fi
 
-  echo -e \\n"Configuring the ${DEPLOYMENT_ENV_NAME} environment for ${component} ..."\\n
-  compDeployments.sh component
+  echo -e \\n"Configuring the ${DEPLOYMENT_ENV_NAME} environment for ${component} ..."
+  compDeployments.sh ${component}
   exitOnError
 done
+
+# Delete the configuration files if the keep command line option was not specified.
+if [ -z "${KEEPJSON}" ]; then
+  echo -e \\n"Removing temporary deployment configuration files ..."
+  cleanConfigs
+fi
 
 if [ -z ${GEN_ONLY} ]; then
   # If a certificate.conf file is found try to automatically install the cerificates.
