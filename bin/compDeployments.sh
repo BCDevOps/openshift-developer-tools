@@ -44,8 +44,7 @@ fi
 # Functions:
 # -----------------------------------------------------------------------------------------------------------------
 generateConfigs() {
-
-  DEPLOYS=$(getDeploymentTemplates $(getTemplateDir))
+  DEPLOYS=$(getDeploymentTemplates $(getTemplateDir ${_component_name}))
 
   # echo "Deployment templates:"
   # for deploy in ${DEPLOYS}; do
@@ -134,28 +133,14 @@ generateConfigs() {
 # =================================================================================================================
 # Main Script:
 # -----------------------------------------------------------------------------------------------------------------
-# Switch to desired project space ...
-switchProject
-exitOnError
-
-echo -e "Removing dangling configuration files ..."
-cleanConfigs
-cleanOverrideParamFiles
-
 echo -e \\n"Generating deployment configuration files ..."
 generateConfigs
 
-echo -e \\n\\n"Removing temporary param override files ..."
+echo -e \\n"Removing temporary param override files ..."
 cleanOverrideParamFiles
 
 if [ -z ${GEN_ONLY} ]; then
   echo -e \\n"Deploying deployment configuration files ..."
   deployConfigs
-fi
-
-# Delete the configuration files if the keep command line option was not specified.
-if [ -z "${KEEPJSON}" ]; then
-  echo -e \\n"Removing temporary deployment configuration files ..."
-  cleanConfigs
 fi
 # =================================================================================================================

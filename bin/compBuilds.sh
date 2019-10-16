@@ -28,7 +28,7 @@ fi
 generateBuildConfigs() {
 
   # Suppress the error message from getBuildTemplates when no search path is returned by getTemplateDir
-  BUILDS=$(getBuildTemplates $(getTemplateDir) 2>/dev/null || "")
+  BUILDS=$(getBuildTemplates $(getTemplateDir ${_component_name}) 2>/dev/null || "")
 
   # echo "Build templates:"
   # for build in ${BUILDS}; do
@@ -76,24 +76,11 @@ generateBuildConfigs() {
 # =================================================================================================================
 # Main Script:
 # -----------------------------------------------------------------------------------------------------------------
-# Switch to the Tools project space ...
-switchProject ${TOOLS}
-exitOnError
-
-echo -e "Removing dangling configuration files ..."
-cleanBuildConfigs
-
 echo -e \\n"Generating build configuration files ..."
 generateBuildConfigs
 
 if [ -z ${GEN_ONLY} ]; then
   echo -e \\n"Deploying build configuration files ..."
   deployBuildConfigs
-fi
-
-# Delete the configuration files if the keep command line option was not specified.
-if [ -z "${KEEPJSON}" ]; then
-  echo -e \\n"Removing temporary build configuration files ..."
-  cleanBuildConfigs
 fi
 # =================================================================================================================

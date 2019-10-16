@@ -22,16 +22,30 @@ if [ -f ${OCTOOLSBIN}/ocFunctions.inc ]; then
 fi
 # ==============================================================================
 
+# Switch to the Tools project space ...
+echo
+switchProject ${TOOLS}
+exitOnError
+
+echo -e \\n"Removing dangling configuration files ..."
+cleanBuildConfigs
+
 for component in ${components}; do
   if [ ! -z "${COMP}" ] && [ ! "${component}" = "." ] && [ ! "${COMP}" = ${component} ]; then
     # Only process named component if -c option specified
     continue
   fi
 
-  echo -e \\n"Configuring the ${TOOLS} environment for ${component} ..."\\n  
-  compBuilds.sh component
+  echo -e \\n"Configuring the ${TOOLS} environment for ${component} ..."
+  compBuilds.sh ${component}
   exitOnError
 done
+
+# Delete the configuration files if the keep command line option was not specified.
+if [ -z "${KEEPJSON}" ]; then
+  echo -e \\n"Removing temporary build configuration files ..."
+  cleanBuildConfigs
+fi
 
 # Process the Jenkins Pipeline configurations ...
 processPipelines.sh

@@ -348,7 +348,12 @@ getBuildTemplates () {
 
 getTemplateDir () {
   (
-    _componentName=${1:-${COMP}}
+    _componentName=${1}
+    if [ ! -z ${_componentName} ] && [ ${_componentName} == '.' ]; then
+      unset _componentName
+    fi
+    
+    _componentName=${_componentName:-${COMP}}
     _searchPath=${2:-${PROJECT_DIR}}
     unset _comResults
     unset _simpleResults
