@@ -47,8 +47,12 @@ if [ -z "${KEEPJSON}" ]; then
   cleanBuildConfigs
 fi
 
-# Process the Jenkins Pipeline configurations ...
-processPipelines.sh
+if [ -z "${SKIP_PIPELINE_PROCESSING}" ]; then
+  # Process the Jenkins Pipeline configurations ...
+  processPipelines.sh
+else
+  echoWarning "\nSkipping Jenkins pipeline processing ..."
+fi
 
 if [ ! -z "${COMP}" ]; then
   # If only processing one component stop here.
