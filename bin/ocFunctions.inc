@@ -393,7 +393,32 @@ getDeploymentTemplates () {
       deploymentTemplates+=" $(find ${searchPath} -regex "^.*\.\(json\|yaml\|yml\)" -exec grep -l "DeploymentConfig\|Route" '{}' \;)"
     done
 
+    if [ ! -z "${ignore_templates}" ]; then
+      deploymentTemplates=$(filterTemplateList ${deploymentTemplates})
+    fi
+
     echo ${deploymentTemplates}
+  )
+}
+
+filterTemplateList () {
+  (
+    templates=${@}
+
+    OIFS=$IFS
+    IFS=" "
+    ignore_templates_array=(${ignore_templates})
+    for template in ${templates}; do
+      templateName=$(getFilenameWithoutExt ${template})
+      if ! contains "${templateName}" "${ignore_templates_array[@]}"; then
+        filteredTemplates+=${template}
+      else
+        echoWarning "Filtering, ${template}, from the list of templates ..."
+      fi
+    done
+    IFS=$OIFS
+
+    echo ${filteredTemplates}
   )
 }
 
