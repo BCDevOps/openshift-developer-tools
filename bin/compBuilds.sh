@@ -67,7 +67,7 @@ generateBuildConfigs() {
       LOCALPARAM=""
     fi
 
-    oc process --filename=${_template} ${LOCALPARAM} ${PARAMFILE} > ${_buildConfig}
+    oc process  --local --filename=${_template} ${LOCALPARAM} ${PARAMFILE} > ${_buildConfig}
     exitOnError
   done
 }
