@@ -285,7 +285,7 @@ for component in ${components}; do
   # for configTemplate in ${_configTemplates}; do
   #   echo ${configTemplate}
   # done
-  #  exit 1
+  # exit 1
 
   # Iterate through each file and generate the params files
   for file in ${_configTemplates}; do
