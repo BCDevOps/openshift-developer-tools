@@ -144,7 +144,6 @@ generateConfigs() {
 # =================================================================================================================
 # Main Script:
 # -----------------------------------------------------------------------------------------------------------------
-echo -e \\n"Generating deployment configuration files ..."
 generateConfigs
 
 echo -e \\n"Removing temporary param override files ..."
