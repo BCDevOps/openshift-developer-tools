@@ -45,7 +45,6 @@ fi
 # -----------------------------------------------------------------------------------------------------------------
 generateConfigs() {
   DEPLOYS=$(getDeploymentTemplates $(getTemplateDir ${_component_name}))
-
   # echo "Deployment templates:"
   # for deploy in ${DEPLOYS}; do
   #   echo ${deploy}
@@ -79,6 +78,18 @@ generateConfigs() {
     if [ ! -z "${APPLY_LOCAL_SETTINGS}" ]; then
       LOCALPARAM=$(find ${_searchPath} -name "${_paramFileName}.local.param")
     fi
+
+    # echoWarning "_template: ${_template}"
+    # echoWarning "_template_basename: ${_template_basename}"
+    # echoWarning "_deploymentConfig: ${_deploymentConfig}"
+    # echoWarning "_searchPath: ${_searchPath}"
+    # echoWarning "PARAM_OVERRIDE_SCRIPT: ${PARAM_OVERRIDE_SCRIPT}"
+    # echoWarning "_componentSettings: ${_componentSettings}"
+    # echoWarning "_paramFileName: ${_paramFileName}"
+    # echoWarning "PARAMFILE: ${PARAMFILE}"
+    # echoWarning "ENVPARAM: ${ENVPARAM}"
+    # echoWarning "LOCALPARAM: ${LOCALPARAM}"
+    # exit 1 
 
     if [ -f "${PARAMFILE}" ]; then
       PARAMFILE="--param-file=${PARAMFILE}"

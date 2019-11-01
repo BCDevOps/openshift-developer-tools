@@ -260,7 +260,7 @@ appendParametersToFile (){
   #    This maps to the param file format: Param_Key=Param_Value
   # 4. + Apply additional filters to the parameters
   # 5. Finally, append the resulting output to the parameter file defined in "${_outputPath}"
-  oc process --parameters --filename=${_template} | \
+  oc process --local --parameters --filename=${_template} | \
     sed '1d' | \
     awk -F'[ ]{2,}' '{ print $1 "=" $NF }' | \
     sed 's~\(^GITHUB_WEBHOOK_SECRET=.*$\)~#\1~' | \
@@ -326,7 +326,24 @@ getJenkinsFiles () {
 }
 
 getConfigTemplates () {
-  echo $(find . -regex "^.*\.\(json\|yaml\|yml\)" -exec grep -l "DeploymentConfig\|BuildConfig\|Route\|\"ImageStream\"\|kind:.ImageStream$" '{}' \; | xargs | sed "s/\.\///g")
+  (
+    _searchPaths=${@}
+    if [ -z "${_searchPaths}" ]; then
+      echoError \\n"getConfigTemplates; Missing parameter!"\\n
+      exit 1
+    fi
+
+    unset configTemplates
+    for searchPath in ${_searchPaths}; do
+      configTemplates+=" $(find ${searchPath} -regex "^.*\.\(json\|yaml\|yml\)" -exec grep -l "DeploymentConfig\|BuildConfig\|Route\|\"ImageStream\"\|kind:.ImageStream$" '{}' \;)"
+    done
+
+    if [ ! -z "${ignore_templates}" ]; then
+      configTemplates=$(filterTemplateList ${configTemplates})
+    fi
+
+    echo ${configTemplates}
+  )
 }
 
 getBuildTemplates () {
@@ -341,6 +358,10 @@ getBuildTemplates () {
     for searchPath in ${_searchPaths}; do
       buildTemplates+=" $(find ${searchPath} -regex "^.*\.\(json\|yaml\|yml\)" -exec grep -l "BuildConfig\|\"ImageStream\"\|kind:.ImageStream$" '{}' \;)"
     done
+
+    if [ ! -z "${ignore_templates}" ]; then
+      buildTemplates=$(filterTemplateList ${buildTemplates})
+    fi
 
     echo ${buildTemplates}
   )

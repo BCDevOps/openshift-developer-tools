@@ -142,23 +142,6 @@ getParameterFileCommentFilter () {
   echo "${_commentFilter}"
 }
 
-getParameterFileOutputPrefix () {
-  _type=${1}
-  if [ -z "${_type}" ]; then
-    echo -e \\n"getParameterFileOutputPrefix; Missing parameter!"\\n
-    exit 1
-  fi
-
-  _outputPrefix=${OUTPUTPREFIX}
-  case ${_type} in
-    l ) # Local Files
-      _outputPrefix=${PROJECT_OS_DIR}
-      ;;
-  esac
-
-  echo ${_outputPrefix}
-}
-
 getParameterFileOutputPath () {
   _type=${1}
   _fileName=${2}
@@ -167,7 +150,6 @@ getParameterFileOutputPath () {
     exit 1
   fi
 
-  _outputPrefix=$(getParameterFileOutputPrefix "${_type}")
   if [ ! -z "${PROFILE}" ]; then
     _outputFilename="${_fileName}.${PROFILE}"
   else
@@ -176,19 +158,19 @@ getParameterFileOutputPath () {
 
   case ${_type} in
     r ) # Regular file
-      _output=${_outputPrefix}$( basename ${_outputFilename}.param )
+      _output=${_outputFilename}.param
       ;;
     d ) # Dev File
-      _output=${_outputPrefix}$( basename ${_outputFilename}.${DEV}.param )
+      _output=${_outputFilename}.${DEV}.param
       ;;
     t ) # Test File
-      _output=${_outputPrefix}$( basename ${_outputFilename}.${TEST}.param )
+      _output=${_outputFilename}.${TEST}.param
       ;;
     p ) # Prod
-      _output=${_outputPrefix}$( basename ${_outputFilename}.${PROD}.param )
+      _output=${_outputFilename}.${PROD}.param
       ;;
     l ) # Local Files
-      _output=${_outputPrefix}/$( basename ${_outputFilename}.local.param )
+      _output=${_outputFilename}.local.param
       ;;
     *) # unrecognized option
       echoError  "\ngetParameterFileOutputPath; Invalid type option.\n"
@@ -288,7 +270,7 @@ generateParameterFile (){
 # Main:
 # -----------------------------------------------------------------------------------------------------------------
 for component in ${components}; do
-  if [ ! -z "${COMP}" ] && [ ! "${COMP}" = ${component} ]; then
+  if [ ! -z "${COMP}" ] && [ ! "${component}" = "." ] && [ ! "${COMP}" = ${component} ]; then
     # Only process named component if -c option specified
     continue
   fi
@@ -297,17 +279,18 @@ for component in ${components}; do
   echo "================================================================================================================="
   echo "Processing templates for ${component}"
   echo "-----------------------------------------------------------------------------------------------------------------"
-  pushd ../${component}/openshift >/dev/null
 
-  # Get list of JSON files - they could be in multiple directories below
-  pushd ${TEMPLATE_DIR} >/dev/null
-  _configTemplates=$(getConfigTemplates)
-  popd >/dev/null
+  _configTemplates=$(getConfigTemplates $(getTemplateDir ${component}))
+  # echo "Configuration templates:"
+  # for configTemplate in ${_configTemplates}; do
+  #   echo ${configTemplate}
+  # done
+  #  exit 1
 
   # Iterate through each file and generate the params files
   for file in ${_configTemplates}; do
     # Don't generate dev/test/prod param files for Build templates
-    TEMPLATE=${TEMPLATE_DIR}/${file}
+    TEMPLATE=${file}
     if isBuildConfig ${TEMPLATE}; then
       _isBuildConfig=1
     else
@@ -318,8 +301,13 @@ for component in ${components}; do
       # Don't create environment specific param files for Build Templates
       if ! skipParameterFileGeneration "${type}" "${_isBuildConfig}"; then
         _commentFilter=$(getParameterFileCommentFilter "${type}")
-        _output=$(getParameterFileOutputPath "${type}" "$(getFilenameWithoutExt ${file})")
+        _output=$(getParameterFileOutputPath "${type}" "${file%.*}")
         _parameterFilter=$(generateParameterFilter "${component}" "${type}" "$(getFilenameWithoutExt ${file})")
+        # echoWarning "file: ${file}"
+        # echoWarning "file wo/ext: ${file%.*}"
+        # echoWarning "_output: ${_output}"
+        # echoWarning "_commentFilter: ${_commentFilter}"
+        # echoWarning "_parameterFilter: ${_parameterFilter}"
         generateParameterFile "${component}" "${TEMPLATE}" "${_output}" "${FORCE}" "${_commentFilter}" "${_parameterFilter}"
         exitOnError
       else
@@ -332,7 +320,6 @@ for component in ${components}; do
     done
   done
 
-  popd >/dev/null
   echo "================================================================================================================="
 done
 
