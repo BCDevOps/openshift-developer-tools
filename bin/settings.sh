@@ -296,7 +296,6 @@ if ! settingsLoaded; then
   # -----------------------------------------------------------------------------------------------------------
   # Project Variables
   export PROJECT_DIR=${PROJECT_DIR:-..}
-  export PROJECT_OS_DIR=${PROJECT_OS_DIR:-.}
 
   export OPERATION=${OPERATION:-create}
   export DEV=${DEV:-dev}
