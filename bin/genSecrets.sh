@@ -146,7 +146,7 @@ processSecret () {
     PARAMFILE=""
   fi
   
-  oc process --filename=${_template} ${PARAMFILE} > ${_configFile}
+  oc process  --local --filename=${_template} ${PARAMFILE} > ${_configFile}
   exitOnError
   
   # Always remove the temporay parameter file ...

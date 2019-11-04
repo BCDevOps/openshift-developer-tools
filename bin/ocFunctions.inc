@@ -260,7 +260,7 @@ appendParametersToFile (){
   #    This maps to the param file format: Param_Key=Param_Value
   # 4. + Apply additional filters to the parameters
   # 5. Finally, append the resulting output to the parameter file defined in "${_outputPath}"
-  oc process --parameters --filename=${_template} | \
+  oc process --local --parameters --filename=${_template} | \
     sed '1d' | \
     awk -F'[ ]{2,}' '{ print $1 "=" $NF }' | \
     sed 's~\(^GITHUB_WEBHOOK_SECRET=.*$\)~#\1~' | \
@@ -325,27 +325,6 @@ getJenkinsFiles () {
   )
 }
 
-getConfigTemplates () {
-  echo $(find . -regex "^.*\.\(json\|yaml\|yml\)" -exec grep -l "DeploymentConfig\|BuildConfig\|Route\|\"ImageStream\"\|kind:.ImageStream$" '{}' \; | xargs | sed "s/\.\///g")
-}
-
-getBuildTemplates () {
-  (
-    _searchPaths=${@}
-    if [ -z "${_searchPaths}" ]; then
-      echoError \\n"getBuildTemplates; Missing parameter!"\\n
-      exit 1
-    fi
-
-    unset buildTemplates
-    for searchPath in ${_searchPaths}; do
-      buildTemplates+=" $(find ${searchPath} -regex "^.*\.\(json\|yaml\|yml\)" -exec grep -l "BuildConfig\|\"ImageStream\"\|kind:.ImageStream$" '{}' \;)"
-    done
-
-    echo ${buildTemplates}
-  )
-}
-
 getTemplateDir () {
   (
     _componentName=${1}
@@ -380,27 +359,6 @@ getTemplateDir () {
   )
 }
 
-getDeploymentTemplates () {
-  (
-    _searchPaths=${@}
-    if [ -z "${_searchPaths}" ]; then
-      echoError \\n"getDeploymentTemplates; Missing parameter!"\\n
-      exit 1
-    fi
-
-    unset deploymentTemplates
-    for searchPath in ${_searchPaths}; do
-      deploymentTemplates+=" $(find ${searchPath} -regex "^.*\.\(json\|yaml\|yml\)" -exec grep -l "DeploymentConfig\|Route" '{}' \;)"
-    done
-
-    if [ ! -z "${ignore_templates}" ]; then
-      deploymentTemplates=$(filterTemplateList ${deploymentTemplates})
-    fi
-
-    echo ${deploymentTemplates}
-  )
-}
-
 filterTemplateList () {
   (
     templates=${@}
@@ -419,6 +377,53 @@ filterTemplateList () {
     IFS=$OIFS
 
     echo ${filteredTemplates}
+  )
+}
+
+getTemplates () {
+  (
+    _filter=${1}
+    shift
+    _searchPaths=${@}
+    if [ -z "${_searchPaths}" ] || [ -z "${_searchPaths}" ]; then
+      echoError \\n"getTemplates; Missing parameter!"\\n
+      exit 1
+    fi
+
+    unset templates
+    for searchPath in ${_searchPaths}; do
+      templates+=" $(find ${searchPath} -regex "^.*\.\(json\|yaml\|yml\)" -exec grep -l "${_filter}" '{}' \;)"
+    done
+
+    if [ ! -z "${ignore_templates}" ]; then
+      templates=$(filterTemplateList ${templates})
+    fi
+
+    echo ${templates}
+  )
+}
+
+getBuildTemplates () {
+  (
+    _searchPaths=${@}
+    echo $(getTemplates "BuildConfig\|\"ImageStream\"\|kind:.ImageStream$" ${_searchPaths})
+  )
+}
+
+getDeploymentTemplates () {
+  (
+    _searchPaths=${@}
+    echo $(getTemplates "DeploymentConfig\|Route" ${_searchPaths})
+  )
+}
+
+getConfigTemplates () {
+  (
+    _searchPaths=${@}
+    unset configTemplates
+    configTemplates+=" $( getBuildTemplates ${_searchPaths})"
+    configTemplates+=" $( getDeploymentTemplates ${_searchPaths})"
+    echo ${configTemplates}
   )
 }
 

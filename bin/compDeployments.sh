@@ -45,7 +45,6 @@ fi
 # -----------------------------------------------------------------------------------------------------------------
 generateConfigs() {
   DEPLOYS=$(getDeploymentTemplates $(getTemplateDir ${_component_name}))
-
   # echo "Deployment templates:"
   # for deploy in ${DEPLOYS}; do
   #   echo ${deploy}
@@ -80,6 +79,18 @@ generateConfigs() {
       LOCALPARAM=$(find ${_searchPath} -name "${_paramFileName}.local.param")
     fi
 
+    # echoWarning "_template: ${_template}"
+    # echoWarning "_template_basename: ${_template_basename}"
+    # echoWarning "_deploymentConfig: ${_deploymentConfig}"
+    # echoWarning "_searchPath: ${_searchPath}"
+    # echoWarning "PARAM_OVERRIDE_SCRIPT: ${PARAM_OVERRIDE_SCRIPT}"
+    # echoWarning "_componentSettings: ${_componentSettings}"
+    # echoWarning "_paramFileName: ${_paramFileName}"
+    # echoWarning "PARAMFILE: ${PARAMFILE}"
+    # echoWarning "ENVPARAM: ${ENVPARAM}"
+    # echoWarning "LOCALPARAM: ${LOCALPARAM}"
+    # exit 1 
+
     if [ -f "${PARAMFILE}" ]; then
       PARAMFILE="--param-file=${PARAMFILE}"
     else
@@ -111,12 +122,12 @@ generateConfigs() {
 
     if updateOperation; then
       echoWarning "Preparing deployment configuration for update/replace, removing any 'Secret' objects so existing values are left untouched ..."
-      oc process --filename=${_template} ${SPECIALDEPLOYPARM} ${LOCALPARAM} ${ENVPARAM} ${PARAMFILE} \
+      oc process  --local --filename=${_template} ${SPECIALDEPLOYPARM} ${LOCALPARAM} ${ENVPARAM} ${PARAMFILE} \
       | jq 'del(.items[] | select(.kind== "Secret"))' \
       > ${_deploymentConfig}
       exitOnError
     elif createOperation; then
-      oc process --filename=${_template} ${SPECIALDEPLOYPARM} ${LOCALPARAM} ${ENVPARAM} ${PARAMFILE} > ${_deploymentConfig}
+      oc process  --local --filename=${_template} ${SPECIALDEPLOYPARM} ${LOCALPARAM} ${ENVPARAM} ${PARAMFILE} > ${_deploymentConfig}
       exitOnError
     else
       echoError "\nUnrecognized operation, $(getOperation).  Unable to process template.\n"
@@ -133,7 +144,6 @@ generateConfigs() {
 # =================================================================================================================
 # Main Script:
 # -----------------------------------------------------------------------------------------------------------------
-echo -e \\n"Generating deployment configuration files ..."
 generateConfigs
 
 echo -e \\n"Removing temporary param override files ..."

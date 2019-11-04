@@ -67,7 +67,7 @@ generateBuildConfigs() {
       LOCALPARAM=""
     fi
 
-    oc process --filename=${_template} ${LOCALPARAM} ${PARAMFILE} > ${_buildConfig}
+    oc process  --local --filename=${_template} ${LOCALPARAM} ${PARAMFILE} > ${_buildConfig}
     exitOnError
   done
 }
@@ -76,7 +76,6 @@ generateBuildConfigs() {
 # =================================================================================================================
 # Main Script:
 # -----------------------------------------------------------------------------------------------------------------
-echo -e \\n"Generating build configuration files ..."
 generateBuildConfigs
 
 if [ -z ${GEN_ONLY} ]; then

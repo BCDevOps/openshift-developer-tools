@@ -48,7 +48,7 @@ for _jenkinsFile in ${JENKINS_FILES}; do
     _localParams=""
   fi
 
-  oc process --filename=${_template} ${_localParams} ${_defaultParams} > ${_output}
+  oc process --local --filename=${_template} ${_localParams} ${_defaultParams} > ${_output}
   exitOnError
   if [ -z ${GEN_ONLY} ]; then
     oc $(getOcAction) -f ${_output}
