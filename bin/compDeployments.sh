@@ -66,7 +66,7 @@ generateConfigs() {
       . ${_componentSettings}
     fi
 
-    if [ ! -z "${PROFILE}" ]; then
+    if [ ! -z "${PROFILE}" ] && [ "${PROFILE}" != "${_defaultProfileName}" ]; then
       _paramFileName="${_template_basename}.${PROFILE}"
     else
       _paramFileName="${_template_basename}"

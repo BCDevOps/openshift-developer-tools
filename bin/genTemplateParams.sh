@@ -150,7 +150,7 @@ getParameterFileOutputPath () {
     exit 1
   fi
 
-  if [ ! -z "${PROFILE}" ]; then
+  if [ ! -z "${PROFILE}" ] && [ "${PROFILE}" != "${_defaultProfileName}" ]; then
     _outputFilename="${_fileName}.${PROFILE}"
   else
     _outputFilename="${_fileName}"
