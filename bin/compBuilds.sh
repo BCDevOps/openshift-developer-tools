@@ -44,7 +44,7 @@ generateBuildConfigs() {
     _buildConfig="${_template_basename}${BUILD_CONFIG_SUFFIX}"
     _searchPath=$(echo $(getDirectory "${_template}") | sed 's~\(^.*/openshift\).*~\1~')
 
-    if [ ! -z "${PROFILE}" ]; then
+    if [ ! -z "${PROFILE}" ] && [ "${PROFILE}" != "${_defaultProfileName}" ]; then
       _paramFileName="${_template_basename}.${PROFILE}"
     else
       _paramFileName="${_template_basename}"
