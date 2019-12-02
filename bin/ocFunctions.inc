@@ -331,7 +331,7 @@ getTemplateDir () {
     if [ ! -z ${_componentName} ] && [ ${_componentName} == '.' ]; then
       unset _componentName
     fi
-    
+
     _componentName=${_componentName:-${COMP}}
     _searchPath=${2:-${PROJECT_DIR}}
     unset _comResults
@@ -567,6 +567,17 @@ recyclePods() {
   scaleUp ${_pods}
 }
 
+recyclePodsWithWait() {
+  _pods=${@}
+  if [ -z "${_pods}" ]; then
+    echo -e \\n"recyclePodsWithWait; Missing parameter!  You must specify the name of at least one pod."\\n
+    exit 1
+  fi
+
+  scaleDownAndWait ${_pods}
+  scaleUpAndWait ${_pods}
+}
+
 scaleUp() {
   _pods=${@}
   if [ -z "${_pods}" ]; then
@@ -577,6 +588,57 @@ scaleUp() {
   for _pod in ${_pods}; do
     scaleDeployment ${_pod} 1
   done
+}
+
+scaleUpAndWait(){
+  (
+    _pods=${@}
+    if [ -z "${_pods}" ]; then
+      echo -e \\n"scaleUpAndWait; Missing parameter!  You must specify the name of at least one pod."\\n
+      exit 1
+    fi
+
+    for _pod in ${_pods}; do
+      scaleDeployment ${_pod} 1
+      waitOnScaleUp ${_pod}
+    done
+  )
+}
+
+waitOnScaleUp() {
+  (
+    _deplymentConfigName=${1}
+    _namespace=$(getProjectName)
+    if [ -z "${_deplymentConfigName}" ]; then
+      echo -e \\n"waitOnScaleUp; Missing parameter!  You must specify the name of the deployment."\\n
+      exit 1
+    fi
+
+    printf "Waiting for %s to scale up " ${_deplymentConfigName}
+    while ! isScaledUp ${_deplymentConfigName}; do
+      printf "."
+      sleep 1
+    done
+    echo -e \\n
+  )
+}
+
+isScaledUp() {
+  (
+    _deplymentConfigName=${1}
+    _namespace=$(getProjectName)
+    if [ -z "${_deplymentConfigName}" ]; then
+      echo -e \\n"isScaledUp; Missing parameter!  You must specify the name of the deployment."\\n
+      exit 1
+    fi
+
+    _podCount=$(oc -n ${_namespace} get dc ${_deplymentConfigName} --template "{{ .status.availableReplicas }}")
+    if ((${_podCount} >= 1)); then
+      return 0
+    else
+      return 1
+    fi
+  )
 }
 
 scaleDown() {
@@ -591,6 +653,58 @@ scaleDown() {
   done
 }
 
+scaleDownAndWait(){
+  (
+    _pods=${@}
+    if [ -z "${_pods}" ]; then
+      echo -e \\n"scaleDownAndWait; Missing parameter!  You must specify the name of at least one pod."\\n
+      exit 1
+    fi
+
+    for _pod in ${_pods}; do
+      scaleDeployment ${_pod}
+      waitOnScaleDown ${_pod}
+    done
+  )
+}
+
+waitOnScaleDown() {
+  (
+    _deplymentConfigName=${1}
+    _namespace=$(getProjectName)
+    if [ -z "${_deplymentConfigName}" ]; then
+      echo -e \\n"waitOnScaleDown; Missing parameter!  You must specify the name of the deployment."\\n
+      exit 1
+    fi
+
+    deplymentConfigInstance=$(getDeplymentConfigInstanceName ${_deplymentConfigName})
+    printf "Waiting for %s to scale to zero " ${_deplymentConfigName}
+    while ! isScaledDown ${deplymentConfigInstance}; do
+      printf "."
+      sleep 1
+    done
+    echo -e \\n
+  )
+}
+
+isScaledDown() {
+  (
+    _deplymentConfigInstance=${1}
+    _namespace=$(getProjectName)
+    if [ -z "${_deplymentConfigName}" ]; then
+      echo -e \\n"isScaledDown; Missing parameter!  You must specify the instance name of the deployment."\\n
+      exit 1
+    fi
+
+    _podCount=$(getPodCount ${_deplymentConfigInstance})
+    if ((${_podCount} == 0)); then
+      return 0
+    else
+      return 1
+    fi
+  )
+}
+
 scaleDeployment() {
   (
     _deplymentConfigName=${1}
@@ -603,6 +717,32 @@ scaleDeployment() {
 
     oc scale -n ${_namespace} --replicas=${_numReplicas} dc ${_deplymentConfigName}
   )
+}
+
+getDeplymentConfigInstanceName() {
+  (
+    _deplymentConfigName=${1}
+    _namespace=$(getProjectName)
+    if [ -z "${_deplymentConfigName}" ]; then
+      echo -e \\n"getDeplymentConfigInstanceName; Missing parameter!  You must specify the name of the deployment."\\n
+      exit 1
+    fi
+
+    deplymentConfigInstance=${_deplymentConfigName}-$(oc -n ${_namespace} get dc ${_deplymentConfigName} --template "{{ .status.latestVersion }}")
+    echo ${deplymentConfigInstance}
+  )
+}
+
+getPodCount() {
+    _deplymentConfigInstance=${1}
+    _namespace=$(getProjectName)
+    if [ -z "${_deplymentConfigName}" ]; then
+      echo -e \\n"getPodCount; Missing parameter!  You must specify the instance name of the deployment."\\n
+      exit 1
+    fi
+
+    _podCount=$(oc -n ${_namespace} get pods -l deployment=${_deplymentConfigInstance} --template '{{ range .items }}{{ printf "%s\n" .metadata.name }}{{end}}' --ignore-not-found | wc -l)
+    echo ${_podCount}
 }
 
 deleteFromPods() {
@@ -1240,7 +1380,7 @@ function getRecordCounts() {
   fi
 
   command='
-    create or replace function 
+    create or replace function
     count_rows(schema text, tablename text) returns integer
     as
     \$body$
@@ -1261,14 +1401,14 @@ function getRecordCounts() {
 
   echo
   command='
-    select 
+    select
       table_schema,
-      table_name, 
+      table_name,
       count_rows(table_schema, table_name),
       pg_size_pretty( pg_total_relation_size(table_name) ) as disk_usage
     from information_schema.tables
-    where 
-      table_schema not in ('"'"'pg_catalog'"'"', '"'"'information_schema'"'"') 
+    where
+      table_schema not in ('"'"'pg_catalog'"'"', '"'"'information_schema'"'"')
       and table_type='"'"'BASE TABLE'"'"'
     order by 3 desc;
   '
@@ -1304,8 +1444,8 @@ function getConnections() {
     # Query taken from here:
     # https://dba.stackexchange.com/questions/161760/number-of-active-connections-and-remaining-connections
     command='
-      select max_conn,used,res_for_super,max_conn-used-res_for_super res_for_normal 
-      from 
+      select max_conn,used,res_for_super,max_conn-used-res_for_super res_for_normal
+      from
         (select count(*) used from pg_stat_activity) t1,
         (select setting::int res_for_super from pg_settings where name=\$\$superuser_reserved_connections\$\$) t2,
         (select setting::int max_conn from pg_settings where name=\$\$max_connections\$\$) t3;
