@@ -22,10 +22,6 @@ if [ -f ${OCTOOLSBIN}/ocFunctions.inc ]; then
 fi
 # ===================================================================================
 
-createGlusterfsClusterApp.sh \
-  -p ${TOOLS}
-exitOnError
-
 # Iterate through Dev, Test and Prod projects granting permissions, etc.
 for project in ${PROJECT_NAMESPACE}-${DEV} ${PROJECT_NAMESPACE}-${TEST} ${PROJECT_NAMESPACE}-${PROD}; do
 
@@ -38,7 +34,4 @@ for project in ${PROJECT_NAMESPACE}-${DEV} ${PROJECT_NAMESPACE}-${TEST} ${PROJEC
   assignRole ${JENKINS_SERVICE_ACCOUNT_ROLE} ${JENKINS_SERVICE_ACCOUNT_NAME} ${project}
   exitOnError
 
-  createGlusterfsClusterApp.sh \
-    -p ${project}
-  exitOnError
 done
