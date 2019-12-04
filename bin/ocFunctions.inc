@@ -163,12 +163,14 @@ podExists (){
 dcExists (){
   (
     _dcName=${1}
+    _namespace=$(getProjectName)
+
     if [ -z "${_dcName}" ]; then
       echo -e \\n"dcExists; Missing parameter!"\\n
       exit 1
     fi
 
-    _dcInstanceName=$(oc -n devex-von-image-tools get dc ${_dcName} --ignore-not-found --template "{{ .metadata.name }}")
+    _dcInstanceName=$(oc -n ${_namespace} get dc ${_dcName} --ignore-not-found --template "{{ .metadata.name }}")
     if [ ! -z "${_dcInstanceName}" ]; then
       # The  deployment configuration exists ...
       return 0
@@ -556,51 +558,56 @@ getPipelineName (){
 }
 
 recyclePods() {
-  _pods=${@}
-  if [ -z "${_pods}" ]; then
-    echo -e \\n"recyclePods; Missing parameter!  You must specify the name of at least one pod."\\n
-    exit 1
-  fi
+  (
+      local OPTIND
+      unset local wait
+      unset local flags
+      while getopts w FLAG; do
+        case $FLAG in
+          w ) 
+            local wait=1
+            local flags="-w"
+            ;;
+        esac
+      done
+      shift $((OPTIND-1))  
 
-  scaleDown ${_pods}
-  printAndWait "Wait for all of the pods (${_pods}) to scale down completely before continuing."
-  scaleUp ${_pods}
-}
+    _pods=${@}
+    if [ -z "${_pods}" ]; then
+      echo -e \\n"recyclePods; Missing parameter!  You must specify the name of at least one pod."\\n
+      exit 1
+    fi
 
-recyclePodsWithWait() {
-  _pods=${@}
-  if [ -z "${_pods}" ]; then
-    echo -e \\n"recyclePodsWithWait; Missing parameter!  You must specify the name of at least one pod."\\n
-    exit 1
-  fi
-
-  scaleDownAndWait ${_pods}
-  scaleUpAndWait ${_pods}
+    scaleDown ${flags} ${_pods}
+    if [ -z ${wait} ]; then
+      printAndWait "Wait for all of the pods (${_pods}) to scale down completely before continuing."
+    fi
+    scaleUp ${flags} ${_pods}
+  )
 }
 
 scaleUp() {
-  _pods=${@}
-  if [ -z "${_pods}" ]; then
-    echo -e \\n"scaleUp; Missing parameter!  You must specify the name of at least one pod."\\n
-    exit 1
-  fi
-
-  for _pod in ${_pods}; do
-    scaleDeployment ${_pod} 1
-  done
-}
-
-scaleUpAndWait(){
   (
+    local OPTIND
+    unset local wait
+    while getopts w FLAG; do
+      case $FLAG in
+        w ) local wait=1 ;;
+      esac
+    done
+    shift $((OPTIND-1))  
+
     _pods=${@}
     if [ -z "${_pods}" ]; then
-      echo -e \\n"scaleUpAndWait; Missing parameter!  You must specify the name of at least one pod."\\n
+      echo -e \\n"scaleUp; Missing parameter!  You must specify the name of at least one pod."\\n
       exit 1
     fi
 
     for _pod in ${_pods}; do
       scaleDeployment ${_pod} 1
-      waitOnScaleUp ${_pod}
+      if [ ! -z ${wait} ]; then 
+        waitOnScaleUp ${_pod}
+      fi
     done
   )
 }
@@ -642,28 +649,30 @@ isScaledUp() {
 }
 
 scaleDown() {
-  _pods=${@}
-  if [ -z "${_pods}" ]; then
-    echo -e \\n"scaleDown; Missing parameter!  You must specify the name of at least one pod."\\n
-    exit 1
-  fi
-
-  for _pod in ${_pods}; do
-    scaleDeployment ${_pod}
-  done
-}
-
-scaleDownAndWait(){
   (
+
+    local OPTIND
+    unset local wait
+    while getopts w FLAG; do
+      case $FLAG in
+        w ) local wait=1 ;;
+      esac
+    done
+    shift $((OPTIND-1))  
+
+
     _pods=${@}
     if [ -z "${_pods}" ]; then
-      echo -e \\n"scaleDownAndWait; Missing parameter!  You must specify the name of at least one pod."\\n
+      echo -e \\n"scaleDown; Missing parameter!  You must specify the name of at least one pod."\\n
       exit 1
     fi
 
     for _pod in ${_pods}; do
       scaleDeployment ${_pod}
-      waitOnScaleDown ${_pod}
+      if [ ! -z ${wait} ]; then 
+        waitOnScaleDown ${_pod}
+      fi
+
     done
   )
 }
@@ -932,9 +941,12 @@ deployBuildConfigs() {
 runInContainer() {
   (
     local OPTIND
-    while getopts v FLAG; do
+    local unset _verbose
+    local unset _flags
+    while getopts vi FLAG; do
       case $FLAG in
-        v ) _verbose=1 ;;
+        v ) local _verbose=1 ;;
+        i ) local _flags="-i -t" ;;
       esac
     done
     shift $((OPTIND-1))
@@ -947,6 +959,12 @@ runInContainer() {
       exit 1
     fi
 
+    if [ "$OSTYPE" == "msys" ] && [ ! -z "${_flags}" ]; then
+      OC_CMD="winpty oc"
+    else
+      OC_CMD="oc"
+    fi
+
     # Get name of a currently deployed pod by label and index
     _podInstanceName=$(getPodByName "${_podName}" "${_podIndex}")
     if [ ! -z "${_podInstanceName}" ]; then
@@ -954,7 +972,7 @@ runInContainer() {
         echo -e "\nExecuting command on ${_podInstanceName}:"
         echo -e "\t${_command}\n"
       fi
-      oc exec "${_podInstanceName}" -n $(getProjectName) -- bash -c "${_command:-echo Hello}"
+      ${OC_CMD} exec ${_flags} -n $(getProjectName) "${_podInstanceName}" -- bash -c "${_command:-echo Hello}"
     else
       if [ ! -z "${_verbose}" ]; then
         echoWarning "\nrunInContainer; a running instance of ${_podName} was not found.\n"
@@ -970,6 +988,8 @@ runInContainerInteractively() {
     echo -e \\n"runInContainerInteractively; Missing parameter!"\\n
     exit 1
   fi
+
+  echoWarning "\nrunInContainerInteractively is deprecated, use 'runInContainer -i' instead."
 
   _podInstanceName=$(getPodByName ${_podName})
   exitOnError
@@ -1244,25 +1264,40 @@ dropAndRecreateDatabaseWithMigrations() {
     # is managed by migrations hosted on an API pod.
     #
     # The function is purposely wrapped in a subshell `(...)` to avoid variable name collisions.
-    _apiPodName=${1}
-    _dbPodName=${2}
-    if [ -z "${_apiPodName}" ] || [ -z "${_dbPodName}" ]; then
+    local OPTIND
+    unset local autoScale
+    unset local flags
+    while getopts a FLAG; do
+      case $FLAG in
+        a ) 
+          local autoScale=1
+          local flags="-w"
+          ;;
+      esac
+    done
+    shift $((OPTIND-1))
+    
+    local apiPodName=${1}
+    local dbPodName=${2}
+    if [ -z "${apiPodName}" ] || [ -z "${dbPodName}" ]; then
       echo -e \\n"dropAndRecreateDatabaseWithMigrations; Missing parameter!"\\n
       exit 1
     fi
 
-    scaleDown ${_apiPodName}
+    scaleDown ${flags} ${apiPodName}
+    exitOnError
+    if [ -z ${autoScale} ]; then
+      printAndWait "Wait for the ${apiPodName} pod to completely shut down before continuing."
+    fi
+
+    dropAndRecreatePostgreSqlDatabase ${dbPodName}
     exitOnError
 
-    printAndWait "Wait for the ${_apiPodName} pod to completely shut down before continuing."
-
-    dropAndRecreatePostgreSqlDatabase ${_dbPodName}
+    scaleUp ${flags} ${apiPodName}
     exitOnError
-
-    scaleUp ${_apiPodName}
-    exitOnError
-
-    printAndWait "Wait for the ${_apiPodName} pod to completely start up and ensure it has finished running the database migrations before continuing."
+    if [ -z ${autoScale} ]; then
+      printAndWait "Wait for the ${apiPodName} pod to completely start up and ensure it has finished running the database migrations before continuing."
+    fi 
   )
 }
 
