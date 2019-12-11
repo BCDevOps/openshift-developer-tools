@@ -1595,6 +1595,7 @@ function getSecret() {
 }
 
 function listBuildRefs() {
+  # Lists build configurations and their git references in a convenient column format.
   (
     projectName=${1:-${TOOLS}}
     echo
