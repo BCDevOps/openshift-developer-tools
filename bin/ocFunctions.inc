@@ -1579,3 +1579,26 @@ generateSeed() {
   echo ${_seed}
 }
 # =================================================================================================================
+
+function getSecret() {
+  (
+    resourceName=${1}
+    key=${2}
+    projectName=${3:-$(getProjectName)}
+    if [ -z "${resourceName}" ] || [ -z "${key}" ]; then
+      echoError "\ngetSecret; You must specify the 'resourceName' and 'key'.\n"
+      exit 1
+    fi
+
+    echo $(oc -n ${projectName} extract --to=- --keys=${key} secret/${resourceName} 2>&1 | sed -n 2p)
+  )
+}
+
+function listBuildRefs() {
+  # Lists build configurations and their git references in a convenient column format.
+  (
+    projectName=${1:-${TOOLS}}
+    echo
+    oc -n ${projectName} get bc --template '{{ range .items }}{{ printf "%s,%s,%s\n" .metadata.name .spec.source.git.uri .spec.source.git.ref}}{{end}}' | sed 's~%!s(<nil>)~~g' | column -t -s ,
+  )
+}
