@@ -1599,6 +1599,6 @@ function listBuildRefs() {
   (
     projectName=${1:-${TOOLS}}
     echo
-    oc -n ${projectName} get bc --template '{{ range .items }}{{ printf "%s,%s,%s\n" .metadata.name .spec.source.git.uri .spec.source.git.ref}}{{end}}' | sed 's~%!s(<nil>)~~g' | column -t -s ,
+    oc -n ${projectName} get bc --template '{{ range .items }}{{ printf "%s,%s,%s\n" .metadata.name .spec.source.git.uri .spec.source.git.ref}}{{end}}' | sed 's~%!s(<nil>)~-~g' | column -t -s ,
   )
 }
