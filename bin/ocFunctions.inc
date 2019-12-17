@@ -14,14 +14,14 @@ getRelativeOutputDir () {
 }
 
 echoWarning (){
-  _msg=${1}
+  _msg=${@}
   _yellow='\033[1;33m'
   _nc='\033[0m' # No Color
   echo -e "${_yellow}${_msg}${_nc}" >&2
 }
 
 echoError (){
-  _msg=${1}
+  _msg=$@}
   _red='\033[0;31m'
   _nc='\033[0m' # No Color
   echo -e "${_red}${_msg}${_nc}" >&2
@@ -969,13 +969,13 @@ runInContainer() {
     _podInstanceName=$(getPodByName "${_podName}" "${_podIndex}")
     if [ ! -z "${_podInstanceName}" ]; then
       if [ ! -z "${_verbose}" ]; then
-        echo -e "\nExecuting command on ${_podInstanceName}:"
+        echo -e "\nExecuting command on $(getProjectName)/${_podInstanceName}:"
         echo -e "\t${_command}\n"
       fi
       ${OC_CMD} exec ${_flags} -n $(getProjectName) "${_podInstanceName}" -- bash -c "${_command:-echo Hello}"
     else
       if [ ! -z "${_verbose}" ]; then
-        echoWarning "\nrunInContainer; a running instance of ${_podName} was not found.\n"
+        echoWarning "\nrunInContainer; a running instance of $(getProjectName)/${_podName} was not found.\n"
       fi
     fi
   )
@@ -1493,6 +1493,33 @@ function getConnections() {
       ${_dbPodName}${resourceSuffix} \
       "psql -c \"${command}\""
     echo "=============================================================="
+  )
+}
+
+# Drops a specific database from a postgresql container.
+# If a databasename is not provided the default '${POSTGRESQL_DATABASE}' database is assumed.
+function dropDatabase() {
+  (
+    _podName=${1}
+    _databasename=${2}
+    if [ -z "${_podName}" ]; then
+      echoError "\ndropDatabase; You MUST specify a pod name.\n"
+      exit 1
+    fi
+
+    if [ -z "${_databasename}" ]; then
+      databaseName="default"
+      cmd='psql -ac "DROP DATABASE \"${POSTGRESQL_DATABASE}\";"'
+    else
+      databaseName="${_databasename}"
+      cmd="psql -ac 'DROP DATABASE \"${_databasename}\";'"
+    fi
+
+    printAndAskToContinue "If you contiune the ${databaseName} database on $(getProjectName)/${_podName}${resourceSuffix} will be dropped.  All data will be lost."
+    runInContainer -v \
+      ${_podName}${resourceSuffix} \
+      "${cmd}"
+    echoWarning "\nThe ${databaseName} database on $(getProjectName)/${_podName}${resourceSuffix} has been dropped."
   )
 }
 # =================================================================================================================

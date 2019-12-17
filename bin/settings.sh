@@ -11,20 +11,26 @@ globalUsage() {
   cat <<-EOF
 
   Global Options:
-    - Note: Local script options will override global options.
+    - Note: Local script options will override these global options.
   ========
     -h prints the usage for the script
-    -e <Environment> the environment (dev/test/prod) into which you are deploying (default: ${DEPLOYMENT_ENV_NAME})
-    -c <component> to generate parameters for templates of a specific component
+
+    -n <FULLY_QUALIFIED_NAMESPACE>
+       Overrides your project and environmnet namespace with a fully qualified namespace.
+    -e <Environment>
+       The environment (dev/test/prod) into which you are deploying (default: ${DEPLOYMENT_ENV_NAME})
+    -c <component>
+       To generate parameters for templates of a specific component
     -l apply local settings and parameters
-    -p <profile> load a specific settings profile; setting.<profile>.sh
+    -p <profile>
+       Load a specific settings profile; setting.<profile>.sh
     -P Use the default settings profile; settings.sh.  Use this flag to ignore all but the default
        settings profile when there is more than one settings profile defined for a project.
     -k keep the json produced by processing the template
-    -u update OpenShift deployment configs instead of creating the configs
-    -x run the script in debug mode to see what's happening
     -g process the templates and generate the configuration files, but do not create or update them
        automatically set the -k option
+    -u update OpenShift deployment configs instead of creating the configs
+    -x run the script in debug mode to see what's happening
 
     Update settings.sh and settings.local.sh files to set defaults
 EOF
@@ -35,7 +41,7 @@ echoWarning (){
   _msg=${@}
   _yellow='\033[1;33m'
   _nc='\033[0m' # No Color
-  echo -e "${_yellow}${_msg}${_nc}"
+  echo -e "${_yellow}${_msg}${_nc}" >&2
 }
 
 getProfiles() {
@@ -233,7 +239,7 @@ if ! settingsLoaded; then
   OPTIND=1
   unset pass
   while [ ${OPTIND} -le $# ]; do
-    if getopts :p:Pc:e:lukxhg FLAG; then
+    if getopts :p:Pc:e:lukxhgn: FLAG; then
       case $FLAG in
         h ) globalUsage ;;
         c ) export COMP=$OPTARG ;;
@@ -247,6 +253,10 @@ if ! settingsLoaded; then
         g )
           export KEEPJSON=1
           export GEN_ONLY=1
+          ;;
+        n )
+          export FULLY_QUALIFIED_NAMESPACE=$OPTARG
+          echoWarning "Overriding project namespace with fully qualified value, '${FULLY_QUALIFIED_NAMESPACE}' ..."
           ;;
 
         # Collect unrecognized options ...
