@@ -1510,11 +1510,9 @@ function dropDatabase() {
     if [ -z "${_databasename}" ]; then
       databaseName="default"
       cmd='psql -ac "DROP DATABASE \"${POSTGRESQL_DATABASE}\";"'
-      echo "${cmd}"
     else
       databaseName="${_databasename}"
       cmd="psql -ac 'DROP DATABASE \"${_databasename}\";'"
-      echo "${cmd}"
     fi
 
     printAndAskToContinue "If you contiune the ${databaseName} database on $(getProjectName)/${_podName}${resourceSuffix} will be dropped.  All data will be lost."
