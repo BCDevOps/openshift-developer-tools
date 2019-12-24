@@ -371,7 +371,7 @@ filterTemplateList () {
     for template in ${templates}; do
       templateName=$(getFilenameWithoutExt ${template})
       if ! contains "${templateName}" "${ignore_templates_array[@]}"; then
-        filteredTemplates+=${template}
+        filteredTemplates+=" ${template}"
       else
         echoWarning "Filtering, ${template}, from the list of templates ..."
       fi
