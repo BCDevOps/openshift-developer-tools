@@ -1062,11 +1062,28 @@ getPodNameByLabel() {
 
 readConf(){
   (
+    local OPTIND
+    unset local flatten
+    while getopts f FLAG; do
+      case $FLAG in
+        f ) 
+          local flatten=1
+          ;;
+      esac
+    done
+    shift $((OPTIND-1))
+
     configFile=${1}
     if [ -f ${configFile} ]; then
       # Read in the config minus any comments ...
       echo -e \\n"Reading config from ${configFile} ..." >&2
       _value=$(sed '/^[[:blank:]]*#/d;s/#.*//' ${configFile})
+
+      if [ ! -z ${flatten} ]; then
+        # flatten into a single line ...
+        filters=':a;N;$!ba;s~\n~ ~g;'
+        _value=$(echo "${_value}" | sed "${filters}")
+      fi
     fi
 
     echo "${_value}"
