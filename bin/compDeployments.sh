@@ -83,41 +83,43 @@ generateConfigs() {
     # echoWarning "_template_basename: ${_template_basename}"
     # echoWarning "_deploymentConfig: ${_deploymentConfig}"
     # echoWarning "_searchPath: ${_searchPath}"
-    # echoWarning "PARAM_OVERRIDE_SCRIPT: ${PARAM_OVERRIDE_SCRIPT}"
+    # echoWarning PARAM_OVERRIDE_SCRIPT: \"${PARAM_OVERRIDE_SCRIPT}\"
     # echoWarning "_componentSettings: ${_componentSettings}"
     # echoWarning "_paramFileName: ${_paramFileName}"
     # echoWarning "PARAMFILE: ${PARAMFILE}"
     # echoWarning "ENVPARAM: ${ENVPARAM}"
     # echoWarning "LOCALPARAM: ${LOCALPARAM}"
-    # exit 1 
+    # exit 1
+
+    # Used to inject variables from parameter files into override scripts
+    unset overrideScriptVars
 
     if [ -f "${PARAMFILE}" ]; then
+      overrideScriptVars=$(readConf -f ${PARAMFILE})
       PARAMFILE="--param-file=${PARAMFILE}"
     else
       PARAMFILE=""
     fi
 
     if [ -f "${ENVPARAM}" ]; then
+      overrideScriptVars+=" $(readConf -f ${ENVPARAM})"
       ENVPARAM="--param-file=${ENVPARAM}"
     else
       ENVPARAM=""
     fi
 
     if [ -f "${LOCALPARAM}" ]; then
+      overrideScriptVars+=" $(readConf -f ${LOCALPARAM})"
       LOCALPARAM="--param-file=${LOCALPARAM}"
     else
       LOCALPARAM=""
     fi
 
     # Parameter overrides can be defined for individual deployment templates at the root openshift folder level ...
-    if [ -f ${PARAM_OVERRIDE_SCRIPT} ]; then
-      if [ -z "${SPECIALDEPLOYPARM}" ]; then
-        echo -e "Loading parameter overrides for ${deploy} ..."
-        SPECIALDEPLOYPARM=$(OPERATION=${OPERATION} ${PARAM_OVERRIDE_SCRIPT})
-      else
-        echo -e "Adding parameter overrides for ${deploy} ..."
-        SPECIALDEPLOYPARM="${SPECIALDEPLOYPARM} $(OPERATION=${OPERATION} ${PARAM_OVERRIDE_SCRIPT})"
-      fi
+    if [ ! -z ${PARAM_OVERRIDE_SCRIPT} ] && [ -f ${PARAM_OVERRIDE_SCRIPT} ]; then
+      overrideScriptVarsArray=(${overrideScriptVars})
+      echo -e "Loading parameter overrides for ${deploy} ..."
+      SPECIALDEPLOYPARM+=" $(env "${overrideScriptVarsArray[@]}" ${PARAM_OVERRIDE_SCRIPT})"
     fi
 
     if updateOperation; then
