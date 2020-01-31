@@ -1066,7 +1066,7 @@ readConf(){
     unset local flatten
     while getopts f FLAG; do
       case $FLAG in
-        f ) 
+        f )
           local flatten=1
           ;;
       esac
@@ -1080,8 +1080,8 @@ readConf(){
       _value=$(sed '/^[[:blank:]]*#/d;s/#.*//' ${configFile})
 
       if [ ! -z ${flatten} ]; then
-        # flatten into a single line ...
-        filters=':a;N;$!ba;s~\n~ ~g;'
+        # flatten into a single line comma delimited line ...
+        filters=':a;N;$!ba;s~\n~,~g;'
         _value=$(echo "${_value}" | sed "${filters}")
       fi
     fi
