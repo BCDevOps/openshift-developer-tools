@@ -1063,15 +1063,25 @@ getPodNameByLabel() {
 readConf(){
   (
     local OPTIND
+    local OPTARG
     unset local flatten
-    while getopts f FLAG; do
+    unset local delimiter
+    while getopts fd: FLAG; do
       case $FLAG in
         f )
           local flatten=1
           ;;
+        d )
+          local delimiter=${OPTARG}
+          ;;
       esac
     done
     shift $((OPTIND-1))
+
+    # Comma delimit by default ... 
+    if [ -z ${delimiter} ]; then
+      delimiter=','
+    fi
 
     configFile=${1}
     if [ -f ${configFile} ]; then
@@ -1080,8 +1090,8 @@ readConf(){
       _value=$(sed '/^[[:blank:]]*#/d;s/#.*//' ${configFile})
 
       if [ ! -z ${flatten} ]; then
-        # flatten into a single line comma delimited line ...
-        filters=':a;N;$!ba;s~\n~,~g;'
+        # flatten into a single line delimited string ...
+        filters=":a;N;\$!ba;s~\n~${delimiter}~g;"
         _value=$(echo "${_value}" | sed "${filters}")
       fi
     fi

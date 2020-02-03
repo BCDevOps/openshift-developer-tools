@@ -95,21 +95,21 @@ generateConfigs() {
     unset overrideScriptVars
 
     if [ -f "${PARAMFILE}" ]; then
-      overrideScriptVars=$(readConf -f ${PARAMFILE})
+      overrideScriptVars=$(readConf -f -d '\~' ${PARAMFILE})
       PARAMFILE="--param-file=${PARAMFILE}"
     else
       PARAMFILE=""
     fi
 
     if [ -f "${ENVPARAM}" ]; then
-      overrideScriptVars+=",$(readConf -f ${ENVPARAM})"
+      overrideScriptVars+=",$(readConf -f -d '\~' ${ENVPARAM})"
       ENVPARAM="--param-file=${ENVPARAM}"
     else
       ENVPARAM=""
     fi
 
     if [ -f "${LOCALPARAM}" ]; then
-      overrideScriptVars+=",$(readConf -f ${LOCALPARAM})"
+      overrideScriptVars+=",$(readConf -f -d '\~' ${LOCALPARAM})"
       LOCALPARAM="--param-file=${LOCALPARAM}"
     else
       LOCALPARAM=""
@@ -117,8 +117,8 @@ generateConfigs() {
 
     # Parameter overrides can be defined for individual deployment templates at the root openshift folder level ...
     if [ ! -z ${PARAM_OVERRIDE_SCRIPT} ] && [ -f ${PARAM_OVERRIDE_SCRIPT} ]; then
-      # Read the CSV key=value pairs into an array ...
-      IFS=',' read -ra overrideScriptVarsArray <<< "${overrideScriptVars}"
+      # Read the TSV key=value pairs into an array ...
+      IFS='~' read -ra overrideScriptVarsArray <<< "${overrideScriptVars}"
       echo -e "Loading parameter overrides for ${deploy} ..."
       SPECIALDEPLOYPARM+=" $(env "${overrideScriptVarsArray[@]}" ${PARAM_OVERRIDE_SCRIPT})"
     fi
