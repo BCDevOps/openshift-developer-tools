@@ -1244,6 +1244,24 @@ transferRoutes() {
   )
 }
 
+untagImages() {
+  _appName=${1}
+  if [ -z "${_appName}" ]; then
+    echoError "\nuntagAllImages; You MUST specify the name to use when filtering on the 'app' label.\n"
+    exit 1
+  fi
+
+  printAndAskToContinue "If you contiune the all of the tags from any image associated to '${_appName}' will be deleted."
+
+  appImages=$(oc -n ${TOOLS} get is -l app=${_appName} --template '{{ range .items }}{{ printf "%s\n" .metadata.name}}{{end}}')
+  for appImage in ${appImages}; do
+    sourceTags=$( oc -n ${TOOLS} get is ${appImage} --template '{{ range .spec.tags }}{{ printf "%s\n" .name}}{{end}}')
+    for sourceTag in ${sourceTags}; do
+      oc -n ${TOOLS} tag ${appImage}:${sourceTag} -d
+    done
+  done
+}
+
 # =================================================================================================================
 # Database Managment Functions:
 # -----------------------------------------------------------------------------------------------------------------
