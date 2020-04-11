@@ -21,7 +21,7 @@ echoWarning (){
 }
 
 echoError (){
-  _msg=$@}
+  _msg=${@}
   _red='\033[0;31m'
   _nc='\033[0m' # No Color
   echo -e "${_red}${_msg}${_nc}" >&2
