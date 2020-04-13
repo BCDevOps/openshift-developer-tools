@@ -367,17 +367,34 @@ filterTemplateList () {
 
     OIFS=$IFS
     IFS=" "
-    ignore_templates_array=(${ignore_templates})
-    for template in ${templates}; do
-      templateName=$(getFilenameWithoutExt ${template})
-      if ! contains "${templateName}" "${ignore_templates_array[@]}"; then
-        filteredTemplates+=" ${template}"
-      else
-        echoWarning "Filtering, ${template}, from the list of templates ..."
-      fi
-    done
-    IFS=$OIFS
 
+    # Filter on include list
+    if [ ! -z "${include_templates}" ]; then
+      include_templates_array=(${include_templates})
+      for template in ${templates}; do
+        templateName=$(getFilenameWithoutExt ${template})
+        if contains "${templateName}" "${include_templates_array[@]}"; then
+          filteredTemplates+=" ${template}"
+        else
+          echoWarning "Filtering, '${template}', from the list of templates, it is not in the list of templates to include ..."
+        fi
+      done
+    fi
+
+    # Filter on ignore list
+    if [ ! -z "${ignore_templates}" ]; then
+      ignore_templates_array=(${ignore_templates})
+      for template in ${templates}; do
+        templateName=$(getFilenameWithoutExt ${template})
+        if ! contains "${templateName}" "${ignore_templates_array[@]}"; then
+          filteredTemplates+=" ${template}"
+        else
+          echoWarning "Filtering, '${template}', from the list of templates, it is in the list of templates to be ignored ..."
+        fi
+      done
+    fi
+
+    IFS=$OIFS
     echo ${filteredTemplates}
   )
 }
@@ -397,7 +414,7 @@ getTemplates () {
       templates+=" $(find ${searchPath} -regex "^.*\.\(json\|yaml\|yml\)" -exec grep -l "${_filter}" '{}' \;)"
     done
 
-    if [ ! -z "${ignore_templates}" ]; then
+    if [ ! -z "${ignore_templates}" ] || [ ! -z "${include_templates}" ]; then
       templates=$(filterTemplateList ${templates})
     fi
 
@@ -564,13 +581,13 @@ recyclePods() {
       unset local flags
       while getopts w FLAG; do
         case $FLAG in
-          w ) 
+          w )
             local wait=1
             local flags="-w"
             ;;
         esac
       done
-      shift $((OPTIND-1))  
+      shift $((OPTIND-1))
 
     _pods=${@}
     if [ -z "${_pods}" ]; then
@@ -595,7 +612,7 @@ scaleUp() {
         w ) local wait=1 ;;
       esac
     done
-    shift $((OPTIND-1))  
+    shift $((OPTIND-1))
 
     _pods=${@}
     if [ -z "${_pods}" ]; then
@@ -605,7 +622,7 @@ scaleUp() {
 
     for _pod in ${_pods}; do
       scaleDeployment ${_pod} 1
-      if [ ! -z ${wait} ]; then 
+      if [ ! -z ${wait} ]; then
         waitOnScaleUp ${_pod}
       fi
     done
@@ -658,7 +675,7 @@ scaleDown() {
         w ) local wait=1 ;;
       esac
     done
-    shift $((OPTIND-1))  
+    shift $((OPTIND-1))
 
 
     _pods=${@}
@@ -669,7 +686,7 @@ scaleDown() {
 
     for _pod in ${_pods}; do
       scaleDeployment ${_pod}
-      if [ ! -z ${wait} ]; then 
+      if [ ! -z ${wait} ]; then
         waitOnScaleDown ${_pod}
       fi
 
@@ -1078,7 +1095,7 @@ readConf(){
     done
     shift $((OPTIND-1))
 
-    # Comma delimit by default ... 
+    # Comma delimit by default ...
     if [ -z ${delimiter} ]; then
       delimiter=','
     fi
@@ -1314,14 +1331,14 @@ dropAndRecreateDatabaseWithMigrations() {
     unset local flags
     while getopts a FLAG; do
       case $FLAG in
-        a ) 
+        a )
           local autoScale=1
           local flags="-w"
           ;;
       esac
     done
     shift $((OPTIND-1))
-    
+
     local apiPodName=${1}
     local dbPodName=${2}
     if [ -z "${apiPodName}" ] || [ -z "${dbPodName}" ]; then
@@ -1342,7 +1359,7 @@ dropAndRecreateDatabaseWithMigrations() {
     exitOnError
     if [ -z ${autoScale} ]; then
       printAndWait "Wait for the ${apiPodName} pod to completely start up and ensure it has finished running the database migrations before continuing."
-    fi 
+    fi
   )
 }
 
