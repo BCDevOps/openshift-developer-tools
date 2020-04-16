@@ -10,6 +10,21 @@ globalUsage() {
 
   cat <<-EOF
 
+  Global Commands:
+
+    listProfiles
+      - Get a list of profiles for the project.
+        Example:
+          $0 -e null listProfiles
+          $0 -p myprofile -e null listProfiles
+
+    profileDetails
+      - Get the details of the project's profile(s).  Lists the templates associated to the profile.
+        Example:
+          $0 -e null profileDetails                   - List the details for the project's only profile.
+          $0 -p myprofile -e null profileDetails      - List the details for the 'myprofile' profile.
+          $0 -p default -e null profileDetails all    - List the details for all of the profiles in the project.
+
   Global Options:
     - Note: Local script options will override these global options.
   ========
@@ -91,10 +106,51 @@ printProfiles() {
   echoWarning "Your project contains ${_count} ${_profileDescription}."
   echoWarning "Please select the profile you wish to use."
   echoWarning "--------------------------------------------------------------------------------------------------"
-  for _profile in ${_profiles}; do
-    echoWarning "$(echo "${_profile} - ${_settingsFileName}.${_profile}${_settingsFileExt}" | sed "s~.${_defaultProfileName}~~")"
-  done
+  listProfileDetails ${_profiles}
   echoWarning "=================================================================================================="
+}
+
+listProfileDetails() {
+  local OPTIND
+  local unset _verbose
+  while getopts v FLAG; do
+    case $FLAG in
+      v ) local _verbose=1 ;;
+    esac
+  done
+  shift $((OPTIND-1))
+
+  _profiles=${@}
+
+  for _profile in ${_profiles}; do
+    settingsFile=$(echo ${_settingsFileName}.${_profile}${_settingsFileExt} | sed "s~.${_defaultProfileName}~~")
+    echoWarning "${_profile} - ${settingsFile}"
+   
+    description=$(cat ${settingsFile} | sed -n 's~^.*description[=:][[:space:]]*\(.*\)$~\1~pI')
+    if [ ! -z "${description}" ]; then
+      echo "  - ${description}"
+    fi
+
+    if [ ! -z "${_verbose}" ]; then   
+      # Override the current profile settings ...
+      export PROFILE=${_profile}
+      export SKIP_PIPELINE_PROCESSING=
+      export ignore_templates=
+      export include_templates=
+
+      # Always load the default profile settings ...
+      . ${PWD}/${_settingsFileName}${_settingsFileExt}
+
+      # Then load the desired profile settings ...
+      . ${PWD}/${settingsFile}
+      
+      # List the templates for the profile ...
+      templates=$(getConfigTemplates $(getTemplateDir) 2>/dev/null) 
+      for template in ${templates}; do
+        echo "  - ${template}"
+      done
+    fi
+  done
 }
 
 printSettingsFileNotFound() {
@@ -263,8 +319,16 @@ if ! settingsLoaded; then
         \?) pass+=" -${OPTARG}" ;;
       esac
     else
-      # Collect unrecognized arguments ...
-      pass+=" ${!OPTIND}"
+      globalArgument=$(echo "${!OPTIND}" | tr '[:upper:]' '[:lower:]')
+      case "${globalArgument}" in
+        profiledetails|listprofiles)
+          _globalCmd=${globalArgument}
+          ;;
+        *)
+          # Pass unrecognized arguments ...
+          pass+=" ${!OPTIND}"
+          ;;
+      esac
       let OPTIND++
     fi
   done
@@ -373,8 +437,41 @@ if ! settingsLoaded; then
   # ToDo:
   # - Fill in this section.
   # ===========================================================================================================
-
   export SETTINGS_LOADED=1
+
+  if [ ! -z "${_globalCmd}" ]; then
+    # Requires ocFunctions.inc to be loaded ...
+    if [ -z "${OC_FUNCTIONS_LOADED}" ]; then
+      . ocFunctions.inc
+    fi
+
+    pushd ${SCRIPT_HOME} >/dev/null
+    case "${_globalCmd}" in
+      profiledetails)
+        commandArgs=${@}
+        if [ ! -z "${commandArgs}" ] && [ "${commandArgs}" == "all" ]; then
+          profiles=$(getProfiles)
+        else
+          profiles=${PROFILE}
+        fi
+
+        echo
+        listProfileDetails -v "${profiles}"
+        ;;
+
+      listprofiles)
+        echo
+        listProfileDetails $(getProfiles)
+        ;;
+
+      *)
+        echoWarning "Unrecognized global command; ${_globalCmd}"
+        globalUsage
+        ;;
+    esac
+    popd >/dev/null
+    exit 0
+  fi
 else
   echo "Settings already loaded ..."
 fi
