@@ -887,34 +887,68 @@ cleanBuildConfigs() {
   done
 }
 
+routeExists() {
+  (
+    routeName=${1}
+    projectName=${2:-$(getProjectName)}
+
+    rtnVal=$(oc -n ${projectName} get route ${routeName} -o name --ignore-not-found)
+    if [ -z "${rtnVal}" ]; then
+      # Route does not exist ..."
+        return 1
+    else
+      # Route exists ..."
+        return 0
+    fi
+  )
+}
+
 # Update route configuration including hostname
 updateRoutes() {
   (
     deploymentConfigFile=${1}
+    projectName=${2:-$(getProjectName)}
     if [ -z "${deploymentConfigFile}" ]; then
       echo -e \\n"updateRoutes; Missing parameter!"\\n
       exit 1
     fi
 
     # Filter out anything that is not a route ...
-    routeConfig=$(cat ${deploymentConfigFile} | jq 'if .items != null then del(.items[] | select(.kind != "Route")) else del(select(.kind != "Route")) end')
-    if [ -z "${routeConfig}" ] || [ "${routeConfig}" = "null" ]; then
+    routeConfigs=$(cat ${deploymentConfigFile} | jq 'if .items != null then del(.items[] | select(.kind != "Route")) else del(select(.kind != "Route")) end')
+    if [ -z "${routeConfigs}" ] || [ "${routeConfigs}" = "null" ]; then
       # Everything was filtered out, so there is nothing left to update ...
       exit 0
     fi
 
     # Determine if there is anything left ...
-    routeConfigLength=$(echo ${routeConfig} | jq '.items[] | length')
-    if [ ! -z "${routeConfigLength}" ]; then
-      # The hostname on a route is immutable, so the route needs to be deleted and replaced ...
-      # 'oc apply' will not delete and replace the route even if --force is used.
-      # 'oc apply' will not update the host field if it has changed.
-      # Therefore, 'oc replace' needs to be used to update the route.
-      #
-      # --force - Forces the delete and replace
-      # --save-config - Maintains compatibility with 'oc apply'
-      echo ${routeConfig} | oc replace --force --save-config -f -
-      exitOnError
+    routeConfigsLength=$(echo ${routeConfigs} | jq '.items | length')
+    echoWarning "Found ${routeConfigsLength} routes to update ..."
+
+    if (( "${routeConfigsLength}" > 0 )); then  
+      for (( itemIndex=0; itemIndex<${routeConfigsLength}; itemIndex++ ))
+      do
+        routeConfig=$(echo ${routeConfigs} | jq ".items[${itemIndex}]")
+        routeName=$(echo ${routeConfig} | jq -r '.metadata.name')
+        if routeExists "${routeName}" "${projectName}"; then
+          echoWarning "Patching ${routeName} ..."
+          # The hostname on a route is immutable, so the route needs to be deleted and replaced ...
+          # 'oc apply' will not delete and replace the route even if --force is used.
+          # 'oc apply' will not update the host field if it has changed.
+          # 'oc patch' will not update the route directly.
+          # Therefore, 'oc replace' needs to be used to update the route.
+          # --force - Forces the delete and replace
+          # --save-config - Maintains compatibility with 'oc apply'
+          #
+          # 'oc patch' is used with --dry-run it retain any additional route configurations such as certificates.
+          oc -n ${projectName} patch route ${routeName} --dry-run -o json -p "${routeConfig}" | oc -n ${projectName} replace --force --save-config -f -
+        else
+          echoWarning "Creating ${routeName} ..."
+          echo ${routeConfig} | oc -n ${projectName} $(getOcAction) -f -
+        fi
+        
+        exitOnError
+        echo
+      done
     fi
   )
 }
