@@ -1224,7 +1224,6 @@ installCertificates() {
 
     for route in ${routes}; do
       if isProjectRoute "${projectName}" "${route}"; then
-        echo
         installCertificate "${route}"
       fi
     done
@@ -1255,16 +1254,20 @@ installCertificate() {
       exit 1
     fi
 
-    resourceType="route"
-    echo "Installing certificate [${certPath}] and private key [${pkPath}] on route [${routeName}] in project [${projectName}] ..."
+    if [ -f ${certPath} ] && [ -f ${pkPath} ]; then
+      resourceType="route"
+      echo "Installing certificate [${certPath}] and private key [${pkPath}] on route [${routeName}] in project [${projectName}] ..."
 
-    unset certPatch
-    certPatch=$(getCertificatePatch "${certPath}" "${pkPath}")
+      unset certPatch
+      certPatch=$(getCertificatePatch "${certPath}" "${pkPath}")
 
-    if [ ! -z "${certPatch}" ]; then
-      eval oc -n ${projectName} patch ${resourceType} ${routeName} -p ${certPatch}
+      if [ ! -z "${certPatch}" ]; then
+        eval oc -n ${projectName} patch ${resourceType} ${routeName} -p ${certPatch}
+      else
+        echoError "Unable to install the certificate.  To install the certificate please ensure copies of the certificate and private key exist in the specified location."
+      fi
     else
-      echoError "Unable to install the certificate.  To install the certificate please ensure copies of the certificate and private key exist in the specified location."
+      echoWarning "Neither '${certPath}' nor '${pkPath}' where found.  Skipping certificate installation."
     fi
   )
 }
