@@ -963,8 +963,7 @@ deployConfigs() {
 
       # Filter out the routes, since we've already updated them ...
       config=$(cat ${configFile} | jq 'if .items != null then del(.items[] | select(.kind == "Route")) else del(select(.kind == "Route"))  end')
-      numItems=$(echo ${config} | jq '.items | length')
-      if (( "${numItems}" <= 0 )); then
+      if [ -z "${config}" ] || [ "${config}" = "null" ]; then
         # Everything was filtered out, so there is nothing left to update ...
         continue
       fi
