@@ -875,7 +875,7 @@ getBuildConfigFiles() {
   if [ ! -z "${_configFiles}" ]; then
     echo "${_configFiles}"
   else
-    find . -name "*${BUILD_CONFIG_SUFFIX}"
+    find ../ -type f -name "*${BUILD_CONFIG_SUFFIX}"
   fi
 }
 
@@ -963,9 +963,10 @@ deployConfigs() {
 
       # Filter out the routes, since we've already updated them ...
       config=$(cat ${configFile} | jq 'if .items != null then del(.items[] | select(.kind == "Route")) else del(select(.kind == "Route"))  end')
-      if [ -z "${config}" ] || [ "${config}" = "null" ]; then
+      numItems=$(echo ${config} | jq '.items | length')
+      if (( "${numItems}" <= 0 )); then
         # Everything was filtered out, so there is nothing left to update ...
-        exit 0
+        return 0
       fi
 
       echo "${config}" | oc $(getOcAction) -f -
@@ -977,11 +978,90 @@ deployConfigs() {
   done
 }
 
+buildConfigExists() {
+  (
+    buildName=${1}
+    projectName=${2:-$(getProjectName)}
+
+    rtnVal=$(oc -n ${projectName} get bc ${buildName} -o name --ignore-not-found)
+    if [ -z "${rtnVal}" ]; then
+      # Route does not exist ..."
+        return 1
+    else
+      # Route exists ..."
+        return 0
+    fi
+  )
+}
+
+updateBuildConfigs() {
+  (
+    buildConfigFile=${1}
+    projectName=${2:-${TOOLS}}
+    if [ -z "${buildConfigFile}" ]; then
+      echo -e \\n"updateBuildConfigs; Missing parameter!"\\n
+      exit 1
+    fi
+
+    # Filter out anything that is not a buildConfig ...
+    buildConfigs=$(cat ${buildConfigFile} | jq 'if .items != null then del(.items[] | select(.kind != "BuildConfig")) else del(select(.kind != "BuildConfig")) end')
+    if [ -z "${buildConfigs}" ] || [ "${buildConfigs}" = "null" ]; then
+      # Everything was filtered out, so there is nothing left to update ...
+      exit 0
+    fi
+
+    # Determine if there is anything left ...
+    buildConfigsLength=$(echo ${buildConfigs} | jq '.items | length')
+    echoWarning "Found ${buildConfigsLength} buildConfigs to update ..."
+
+    if (( "${buildConfigsLength}" > 0 )); then
+      for (( itemIndex=0; itemIndex<${buildConfigsLength}; itemIndex++ ))
+      do
+        buildConfig=$(echo ${buildConfigs} | jq ".items[${itemIndex}]")
+        buildName=$(echo ${buildConfig} | jq -r '.metadata.name')
+        if buildConfigExists "${buildName}" "${projectName}"; then
+          echoWarning "Patching ${buildName} ..."
+          # Filter out the triggers from the new config so we can retain the existing ones
+          filteredConfig=$(echo "${buildConfig}" | jq 'if .items != null then del(.items[] | select(.kind == "BuildConfig") | .spec.triggers) else del(select(.kind == "BuildConfig") | .spec.triggers) end')
+          # 'oc patch' is used with --dry-run it retain the trigger settings of the exiting buildConfig.
+          # This ensures exiting webhooks are not broken when the build is updated.
+          oc -n ${projectName} patch bc ${buildName} --dry-run -o json -p "${filteredConfig}" | oc -n ${projectName} $(getOcAction) -f -
+        else
+          echoWarning "Creating ${buildName} ..."
+          echo ${buildConfig} | oc -n ${projectName} $(getOcAction) -f -
+        fi
+        
+        exitOnError
+        echo
+      done
+    fi
+  )
+}
+
 deployBuildConfigs() {
   _configFiles=$(getBuildConfigFiles ${@})
   for configFile in ${_configFiles}; do
-    oc $(getOcAction) -f ${configFile}
-    exitOnError
+    if updateOperation; then
+      # Update existing buildConfigs first ...
+      updateBuildConfigs ${configFile}
+
+      # Filter out the buildConfigs, since we've already updated them ...
+      config=$(cat ${configFile} | jq 'if .items != null then del(.items[] | select(.kind == "BuildConfig")) else del(select(.kind == "BuildConfig"))  end')
+      numItems=$(echo ${config} | jq '.items | length')
+      if (( "${numItems}" <= 0 )); then
+        # Everything was filtered out, so there is nothing left to update ...
+        return 0
+      fi
+
+      echo "${config}" | oc $(getOcAction) -f -
+      exitOnError
+    elif createOperation; then
+      oc $(getOcAction) -f ${configFile}
+      exitOnError
+    else
+      echoError "\nUnrecognized operation, $(getOperation).  Unable to process build configuration.\n"
+      exit 1
+    fi
   done
 }
 
