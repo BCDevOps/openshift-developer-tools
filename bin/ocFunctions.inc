@@ -917,7 +917,7 @@ updateRoutes() {
     routeConfigs=$(cat ${deploymentConfigFile} | jq 'if .items != null then del(.items[] | select(.kind != "Route")) else del(select(.kind != "Route")) end')
     if [ -z "${routeConfigs}" ] || [ "${routeConfigs}" = "null" ]; then
       # Everything was filtered out, so there is nothing left to update ...
-      exit 0
+      return 0
     fi
 
     # Determine if there is anything left ...
@@ -966,7 +966,7 @@ deployConfigs() {
       numItems=$(echo ${config} | jq '.items | length')
       if (( "${numItems}" <= 0 )); then
         # Everything was filtered out, so there is nothing left to update ...
-        return 0
+        continue
       fi
 
       echo "${config}" | oc $(getOcAction) -f -
@@ -1007,7 +1007,7 @@ updateBuildConfigs() {
     buildConfigs=$(cat ${buildConfigFile} | jq 'if .items != null then del(.items[] | select(.kind != "BuildConfig")) else del(select(.kind != "BuildConfig")) end')
     if [ -z "${buildConfigs}" ] || [ "${buildConfigs}" = "null" ]; then
       # Everything was filtered out, so there is nothing left to update ...
-      exit 0
+      return 0
     fi
 
     # Determine if there is anything left ...
@@ -1050,7 +1050,7 @@ deployBuildConfigs() {
       numItems=$(echo ${config} | jq '.items | length')
       if (( "${numItems}" <= 0 )); then
         # Everything was filtered out, so there is nothing left to update ...
-        return 0
+        continue
       fi
 
       echo "${config}" | oc $(getOcAction) -f -
