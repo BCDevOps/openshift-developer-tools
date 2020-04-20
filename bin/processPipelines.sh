@@ -50,13 +50,15 @@ for _jenkinsFile in ${JENKINS_FILES}; do
 
   oc process --local --filename=${_template} ${_localParams} ${_defaultParams} > ${_output}
   exitOnError
-  if [ -z ${GEN_ONLY} ]; then
-    oc $(getOcAction) -f ${_output}
-    exitOnError
-  fi
-
-  # Delete the temp file if the keep command line option was not specified.
-  if [ -z "${KEEPJSON}" ]; then
-    rm ${_output}
-  fi
 done
+
+if [ -z ${GEN_ONLY} ]; then
+  echo -e \\n"Deploying pipeline configuration files ..."
+  deployBuildConfigs
+fi
+
+# Delete the configuration files if the keep command line option was not specified.
+if [ -z "${KEEPJSON}" ]; then
+  echo -e \\n"Removing temporary pipeline configuration files ..."
+  cleanBuildConfigs
+fi
