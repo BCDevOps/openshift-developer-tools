@@ -432,7 +432,7 @@ getBuildTemplates () {
 getDeploymentTemplates () {
   (
     _searchPaths=${@}
-    echo $(getTemplates "DeploymentConfig\|Route" ${_searchPaths})
+    echo $(getTemplates "DeploymentConfig\|StatefulSet\|Route\|Secret" ${_searchPaths})
   )
 }
 
