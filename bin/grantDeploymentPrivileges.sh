@@ -10,7 +10,7 @@ cat <<EOF
 Grants deployment configurations access to the images in the tools project.
 --------------------------------------------------------------------------------
 Usage:
-  ${0} [ -h -x ] -p <TARGET_PROJECT> -t <TOOLS_PROJECT>
+  ${0} [ -h -x ] -s [SERVICE_ACCOUNT] -p <TARGET_PROJECT> -t <TOOLS_PROJECT>
 
 Options:
   -h prints the usage for the script
@@ -27,10 +27,11 @@ fi
 # ------------------------------------------------------------------------------
 # In case you wanted to check what variables were passed
 # echo "flags = $*"
-while getopts p:t:xh FLAG; do
+while getopts p:t:s:xh FLAG; do
   case $FLAG in
     p ) TARGET_PROJECT_NAME=$OPTARG ;;
     t ) TOOLS_PROJECT_NAME=$OPTARG ;;
+    s ) SERVICE_ACCOUNT_NAME=$OPTARG ;;
     x ) export DEBUG=1 ;;
     h ) usage ;;
     \?) #unrecognized option - show help
@@ -52,11 +53,14 @@ if [ -z "${TARGET_PROJECT_NAME}" ] || [ -z "${TOOLS_PROJECT_NAME}" ]; then
   echo -e \\n"Missing parameters - target project name, tools project name"
   usage
 fi
+
+export SERVICE_ACCOUNT_NAME=${SERVICE_ACCOUNT_NAME:-default}
+
 # ==============================================================================
 
-echo "Granting deployment configuration access from ${TARGET_PROJECT_NAME}, to ${TOOLS_PROJECT_NAME} ..."
+echo "Granting deployment configuration access from '${TARGET_PROJECT_NAME}', to '${TOOLS_PROJECT_NAME}', for service account '${SERVICE_ACCOUNT_NAME}' ..."
 assignRole \
   system:image-puller \
-  system:serviceaccount:${TARGET_PROJECT_NAME}:default \
+  system:serviceaccount:${TARGET_PROJECT_NAME}:${SERVICE_ACCOUNT_NAME} \
   ${TOOLS_PROJECT_NAME}
 echo
