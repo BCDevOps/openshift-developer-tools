@@ -93,11 +93,30 @@ writeParameter(){
   )
 }
 
+parseHostnameParameter(){
+  (
+    _sourceParamName=${1}
+    _destParamName=${2}
+    # Parses the host name from the url contained in the source parameter, and writes the value into the destination parameter.
+    eval ${_destParamName}=$(getHostname $(getParameter ${_sourceParamName}))
+    printStatusMsg "Parsing ${_destParamName} from ${_sourceParamName}; '$(getParameter ${_sourceParamName})' => '${!_destParamName}' ..."
+    writeParameter "${_destParamName}" "${!_destParamName}" "false"
+  )
+}
+
 getParameter(){
   (
     _paramName=${1}
     # Reads a parameter from the override param file.
     echo $(grep ${_paramName} $"${_overrideParamFile}" | awk -F= '{print $2}')
+  )
+}
+
+getHostname(){
+  (
+    _url=${1}
+    # Extract the host name from a url.
+    echo $(echo ${_url} | awk -F[/:] '{print $4}')
   )
 }
 
