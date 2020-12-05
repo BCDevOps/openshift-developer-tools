@@ -93,6 +93,14 @@ writeParameter(){
   )
 }
 
+getParameter(){
+  (
+    _paramName=${1}
+    # Reads a parameter from the override param file.
+    echo $(grep ${_paramName} $"${_overrideParamFile}" | awk -F= '{print $2}')
+  )
+}
+
 generateKey(){
   (
     _length=${1:-48}
