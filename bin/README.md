@@ -75,14 +75,14 @@ Also make sure `usr/local/bin` is at a higher priority on your **PATH** than `us
 
 ### Linux Setup
 
-These scripts use `awk`, but problems may be encountered if `mawk` is used rather than the GNU awk `gawk`. One distribution that uses `mawk` by default is Kali Linux for the Linux Subsystem for Windows:
+These scripts use `awk`, but problems may be encountered if `mawk` is used rather than the GNU awk `gawk`. `mawk` is used by default in Ubuntu 20.04 and Kali Linux for the Linux Subsystem for Windows.
 
 ```
 $ awk -W version
 mawk 1.3.3 Nov 1996, Copyright (C) Michael D. Brennan
 ```
 
-For Kali Linux, installing `gawk` will make it the default implementation of `awk`:
+For Ubuntu and Kali Linux, installing `gawk` will make it the default implementation of `awk`:
 
 ```
 $ sudo apt-get install gawk
