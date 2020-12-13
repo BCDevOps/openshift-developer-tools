@@ -163,7 +163,15 @@ generateConfigMap() {
     exit 1
   fi
 
-  oc create configmap ${_config_map_name} --from-file ${_source_file} --dry-run -o ${_output_format} > ${_output_file}
+  # Auto-detect env files ....
+  extension="${_source_file##*.}"
+  if [ ! -z "${extension}" ] && [[ "${extension}" == "env" ]]; then
+    _from_file_type="--from-env-file"
+  else
+    _from_file_type="--from-file"
+  fi
+  
+  oc create configmap ${_config_map_name} ${_from_file_type} ${_source_file} --dry-run -o ${_output_format} > ${_output_file}
 }
 
 initialize(){
