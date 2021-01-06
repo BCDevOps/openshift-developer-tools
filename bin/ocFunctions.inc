@@ -425,14 +425,14 @@ getTemplates () {
 getBuildTemplates () {
   (
     _searchPaths=${@}
-    echo $(getTemplates "BuildConfig\|\"ImageStream\"\|kind:.ImageStream$" ${_searchPaths})
+    echo $(getTemplates "\bBuildConfig\b\|\bpullSecret\b\|\bImageStream\b\|kind:.ImageStream$" ${_searchPaths})
   )
 }
 
 getDeploymentTemplates () {
   (
     _searchPaths=${@}
-    echo $(getTemplates "DeploymentConfig\|StatefulSet\|Route\|Secret" ${_searchPaths})
+    echo $(getTemplates "\bDeploymentConfig\b\|\bStatefulSet\b\|\bRoute\b\|\bSecret\b" ${_searchPaths})
   )
 }
 
