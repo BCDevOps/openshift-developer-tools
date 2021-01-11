@@ -1788,15 +1788,41 @@ generateSeed() {
 function getSecret() {
   (
     resourceName=${1}
-    key=${2}
+    keys=${2}
     projectName=${3:-$(getProjectName)}
-    if [ -z "${resourceName}" ] || [ -z "${key}" ]; then
+    if [ -z "${resourceName}" ] || [ -z "${keys}" ]; then
       echoError "\ngetSecret; You must specify the 'resourceName' and 'key'.\n"
       exit 1
     fi
 
-    echo $(oc -n ${projectName} extract --to=- --keys=${key} secret/${resourceName} 2>&1 | sed -n 2p)
+    echo $(oc -n ${projectName} extract --to=- --keys=${keys} secret/${resourceName} 2>&1 | sed -n '/#/ !p')
   )
+}
+
+function buildCreds() {
+    namespaceName=${1}
+    credName=${2}
+    newCredName=${3}
+    dockerReg=${4}
+    credName=$(oc get secrets -n ${namespaceName} | sed -n "/^${credName}\b/p" | awk '{print $1}')
+
+    userPass=$(getSecret ${credName} username,password ${namespaceName})
+    userName=userPass[0]
+    password=userPass[1]
+
+    echo $namespaceName
+    echo $credName
+    echo $newCredName
+    echo $dockerReg
+    
+
+    oc create secret docker-registry ${newCredName} -n ${namespaceName} \
+        --docker-server=${dockerReg} \
+        --docker-username=${userName} \
+        --docker-password=${password} \
+        --docker-email=unused
+    oc secrets link default artifactory-creds --for=pull
+    oc secrets link builder artifactory-creds
 }
 
 function listBuildRefs() {

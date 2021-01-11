@@ -78,6 +78,11 @@ generateBuildConfigs() {
 # -----------------------------------------------------------------------------------------------------------------
 generateBuildConfigs
 
+if [ ! -z ${USE_PULL_CREDS} ] && [ ${USE_PULL_CREDS}=true ]; then
+  echo "BUILDING PULL CREDS"
+  buildCreds ${TOOLS} ${CRED_SEARCH_NAME} ${PULL_CREDS} docker-remote.artifacts.developer.gov.bc.ca
+fi
+
 if [ -z ${GEN_ONLY} ]; then
   echo -e \\n"Deploying build configuration files ..."
   deployBuildConfigs
