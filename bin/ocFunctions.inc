@@ -1799,31 +1799,57 @@ function getSecret() {
   )
 }
 
+function buildPromptCreds(){
+  namespaceName=${1}
+  newCredName=${2}
+  dockerReg=${3}
+  credEnvs=${4}
+  userName=${5}
+  password=${6}
+  
+  if ([ -z ${userName} ] || [ -z ${password} ]); then
+    echo "Please enter your ${dockerReg} username"
+    read userName
+
+    echo "Please enter your ${dockerReg} password"
+    read password
+  fi
+
+  #set cred env to tools if unset
+  if [ -z "${credEnvs}" ]; then
+    credEnvs="tools"
+  fi
+  #create pull secret in each environment we need
+  for env in ${credEnvs}; do
+    oc create secret docker-registry ${newCredName} -n ${namespaceName}-${env} \
+      --docker-server=${dockerReg} \
+      --docker-username=${userName} \
+      --docker-password=${password} \
+      --docker-email=unused
+    oc secrets link default ${newCredName} --for=pull
+    oc secrets link builder ${newCredName}
+  done
+
+  
+}
+
 function buildCreds() {
     namespaceName=${1}
     credName=${2}
     newCredName=${3}
     dockerReg=${4}
-    credName=$(oc get secrets -n ${namespaceName} | sed -n "/^${credName}\b/p" | awk '{print $1}')
+    credEnvs=${5}
 
-    userPass=$(getSecret ${credName} username,password ${namespaceName})
-    userName=userPass[0]
-    password=userPass[1]
+    #search for the credential name, limit to 1st result
+    credName=$(oc get secrets -n ${namespaceName}-tools | sed -n "/${credName}/p" | awk '{print $1}' | head -1)
 
-    echo $namespaceName
-    echo $credName
-    echo $newCredName
-    echo $dockerReg
-    
+    userName=$(getSecret ${credName} username ${namespaceName}-tools)
+    password=$(getSecret ${credName} password ${namespaceName}-tools)
 
-    oc create secret docker-registry ${newCredName} -n ${namespaceName} \
-        --docker-server=${dockerReg} \
-        --docker-username=${userName} \
-        --docker-password=${password} \
-        --docker-email=unused
-    oc secrets link default artifactory-creds --for=pull
-    oc secrets link builder artifactory-creds
+    buildPromptCreds ${namespaceName} ${newCredName} ${dockerReg} "${credEnvs[@]}" ${userName} ${password}
 }
+
+
 
 function listBuildRefs() {
   # Lists build configurations and their git references in a convenient column format.
