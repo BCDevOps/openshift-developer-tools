@@ -128,12 +128,20 @@ RootProjectDir
 You will need to include a `settings.sh` file in your top level `./openshift` directory that contains your project specific settings.
 
 At a minimum this file should contain definitions for your `PROJECT_NAMESPACE`, `GIT_URI`, and `GIT_REF` all of which should be setup to be overridable.
-
+The commented out sections are used for creating pull secrets, if you plan on using different docker registry, follow the instructions for setting up
+pull credentials [here](#setting-up-pull-secrets)
 **For Example:**
 ```
 export PROJECT_NAMESPACE=${PROJECT_NAMESPACE:-devex-von-permitify}
 export GIT_URI=${GIT_URI:-"https://github.com/bcgov/permitify.git"}
 export GIT_REF=${GIT_REF:-"master"}
+# export USE_PULL_CREDS=true
+# export PULL_CREDS=artifactory-creds
+# export CRED_SEARCH_NAME=artifacts-default
+# export DOCKER_REG=docker-remote.artifacts.developer.gov.bc.ca
+# export DOCKER_USERNAME=username
+# export DOCKER_PASSWORD=password
+# export CRED_ENVS="tools dev"
 ```
 
 **Full Simple Project Structure Example:**
@@ -180,6 +188,25 @@ export images="angular-on-nginx django solr schema-spy"
 # The routes for the project
 export routes="angular-on-nginx django solr schema-spy"
 ```
+## Setting up pull secrets
+To get around docker rate limiting, you may need to create an account on docker.io or use artifactory. In order to do this, you will need to set up
+a pull secret. Here are the environment variables you should add to the bottom of your settings.sh or settings.local.sh.  
+- `USE_PULL_CREDS` is a boolean flag that allows to specify whether or not you want to build the pull credentials.   
+- `PULL_CREDS` will be the name of the newly created pull credentials.  
+- `CRED_SEARCH_NAME` is only needed if you have an existing credential you want to create a pull secret from. If you're using using artifactory this will be `artifacts-default-******`. `CRED_SEARCH_NAME` will search the tools environment for any secret that contains the search name, that way you don't have to know the random string at the end of artifacts-default-... .  
+- `DOCKER_REG` is the name of the docker registry, ex:`docker.io`  
+- `DOCKER_USERNAME` and `DOCKER_PASSWORD` are your login credentials for the docker registry. You don't need these if you're using `CRED_SEARCH_NAME`. altenratively you could remove these or leave them blank and you will be prompted for them in the build.  
+- `CRED_ENVS` is any environment that you're going to be pulling images from. Usually dev and tools or prod and tools. 
+```
+export USE_PULL_CREDS=true #required
+export PULL_CREDS=artifactory-creds #required
+export CRED_SEARCH_NAME=artifacts-default
+export DOCKER_REG=docker-remote.artifacts.developer.gov.bc.ca #required
+export DOCKER_USERNAME=username
+export DOCKER_PASSWORD=password
+export CRED_ENVS="tools dev"
+```  
+After your settings.sh is set up, follow the instructions on [artifactory](https://developer.gov.bc.ca/Artifact-Repositories) pertaining to adding a pull secret to your json/yaml config files. (you can skip any `oc` commands since we've already done them in the build)
 
 ## Settings.local.sh
 
