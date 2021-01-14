@@ -127,6 +127,11 @@ generatePipelineParameterFile (){
 # =================================================================================================================
 # Main:
 # -----------------------------------------------------------------------------------------------------------------
+if [ ! -z "${SKIP_PIPELINE_PROCESSING}" ]; then
+  echoWarning "\nSkipping Jenkins pipeline processing ..."
+  exit 0
+fi
+
 if [ ! -z "${APPLY_LOCAL_SETTINGS}" ]; then
   COMMENTFILTER=$(getLocalPipelineCommentFilter)
   _outputDir=$(pwd -P)
