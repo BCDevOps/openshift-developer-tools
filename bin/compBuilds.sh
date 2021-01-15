@@ -78,16 +78,6 @@ generateBuildConfigs() {
 # -----------------------------------------------------------------------------------------------------------------
 generateBuildConfigs
 
-#setup artifactory/docker pull creds
-if [ ! -z ${USE_PULL_CREDS} ] && [ ${USE_PULL_CREDS} = true ]; then
-  echo "BUILDING PULL CREDS"
-  if [ -z ${CRED_SEARCH_NAME} ]; then
-    buildPromptCreds ${PROJECT_NAMESPACE} ${PULL_CREDS} ${DOCKER_REG} "${CRED_ENVS[@]}" ${DOCKER_USERNAME} ${DOCKER_PASSWORD}
-  else
-    buildCreds ${PROJECT_NAMESPACE} ${CRED_SEARCH_NAME} ${PULL_CREDS} ${DOCKER_REG} "${CRED_ENVS[@]}"
-  fi
-fi
-
 if [ -z ${GEN_ONLY} ]; then
   echo -e \\n"Deploying build configuration files ..."
   deployBuildConfigs
