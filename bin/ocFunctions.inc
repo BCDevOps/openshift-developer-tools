@@ -1829,7 +1829,7 @@ function buildPromptCreds(){
       --docker-password=${password} \
       --docker-email=unused &> /dev/null || cred_exists=1
     if (( ! ${cred_exists})); then
-      oc secrets link default ${newCredName} --for=pull
+      oc secrets link default ${newCredName}
       oc secrets link builder ${newCredName}
 
       echoWarning "Created ${newCredName} in ${env}"
