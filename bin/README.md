@@ -189,7 +189,7 @@ export images="angular-on-nginx django solr schema-spy"
 export routes="angular-on-nginx django solr schema-spy"
 ```
 ## Setting up pull secrets
-To get around docker rate limiting, you may need to create an account on docker.io or use artifactory. In order to do this, you will need to set up a pull secret. If you are using artifactory and have an `artifacts-default-******` credential in your tools environement, simply run  
+To get around docker rate limiting, you may need to create an account on docker.io or use another docker image registry (e.g.: Artifactory). In order to do this, you will need to set up a pull secret. If you are using artifactory and have an `artifacts-default-******` credential in your tools environement, simply run  
 > oc initOSProjects.sh  
 
 or
