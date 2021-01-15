@@ -1827,7 +1827,7 @@ function buildPromptCreds(){
       --docker-server=${dockerReg} \
       --docker-username=${userName} \
       --docker-password=${password} \
-      --docker-email=unused &> /dev/null || cred_exists=1
+      --docker-email=${userName}@${namespaceName}-${env}.local &> /dev/null || cred_exists=1
     if (( ! ${cred_exists})); then
       oc secrets link default ${newCredName}
       oc secrets link builder ${newCredName}
