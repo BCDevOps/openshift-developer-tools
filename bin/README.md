@@ -189,24 +189,42 @@ export images="angular-on-nginx django solr schema-spy"
 export routes="angular-on-nginx django solr schema-spy"
 ```
 ## Setting up pull secrets
-To get around docker rate limiting, you may need to create an account on docker.io or use artifactory. In order to do this, you will need to set up
-a pull secret. Here are the environment variables you should add to the bottom of your settings.sh or settings.local.sh.  
-- `USE_PULL_CREDS` is a boolean flag that allows to specify whether or not you want to build the pull credentials.   
+To get around docker rate limiting, you may need to create an account on docker.io or use artifactory. In order to do this, you will need to set up a pull secret. If you are using artifactory and have an `artifacts-default-******` credential in your tools environement, simply run  
+> oc initOSProjects.sh  
+
+or
+
+> oc initOSProjects.sh -l
+
+and enter `y` when asked if you want to use pull credential `artifacts-default-******`  
+
+If you are planning on using a custom docker registry, you will need to add any of the following relevant environment variables to your `settings.sh` or `settings.local.sh` file and override them  
+```
+export USE_PULL_CREDS=true
+export PULL_CREDS=artifactory-creds
+export CRED_SEARCH_NAME=artifacts-default
+export DOCKER_REG=docker-remote.artifacts.developer.gov.bc.ca
+export CRED_ENVS="tools dev prod test"
+export PROMPT_CREDS=false
+``` 
+These environment variables are all populated with default values so you only have to add one to your settings if you wish to change it.
+- `USE_PULL_CREDS` is a boolean flag that specifies whether or not you want to build the pull credentials.   
 - `PULL_CREDS` will be the name of the newly created pull credentials.  
 - `CRED_SEARCH_NAME` is only needed if you have an existing credential you want to create a pull secret from. If you're using using artifactory this will be `artifacts-default-******`. `CRED_SEARCH_NAME` will search the tools environment for any secret that contains the search name, that way you don't have to know the random string at the end of artifacts-default-... .  
-- `DOCKER_REG` is the name of the docker registry, ex:`docker.io`  
-- `DOCKER_USERNAME` and `DOCKER_PASSWORD` are your login credentials for the docker registry. You don't need these if you're using `CRED_SEARCH_NAME`. altenratively you could remove these or leave them blank and you will be prompted for them in the build.  
-- `CRED_ENVS` is any environment that you're going to be pulling images from. Usually dev and tools or prod and tools. 
-```
-export USE_PULL_CREDS=true #required
-export PULL_CREDS=artifactory-creds #required
-export CRED_SEARCH_NAME=artifacts-default
-export DOCKER_REG=docker-remote.artifacts.developer.gov.bc.ca #required
-export DOCKER_USERNAME=username
-export DOCKER_PASSWORD=password
-export CRED_ENVS="tools dev"
-```  
-After your settings.sh is set up, follow the instructions on [artifactory](https://developer.gov.bc.ca/Artifact-Repositories) pertaining to adding a pull secret to your json/yaml config files. (you can skip any `oc` commands since we've already done them in the build)
+- `CRED_ENVS` is any environment that you're going to be pulling images from. Usually dev and tools or prod and tools.
+- `PROMPT_CREDS` if set to true this will prompt the user to enter their credentials instead of searching for them in tools
+
+  
+After your settings.sh is set up, run  
+> oc initOSProjects.sh  
+
+or
+
+> oc initOSProjects.sh -l
+
+and follow the prompts on the screen.
+
+***After your pull secret is set up, follow the instructions on [artifactory](https://developer.gov.bc.ca/Artifact-Repositories) pertaining to adding a pull secret to your json/yaml config files. (you can skip any `oc` commands since we've already done them in the build)***
 
 ## Settings.local.sh
 
