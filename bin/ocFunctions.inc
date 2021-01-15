@@ -1788,14 +1788,14 @@ generateSeed() {
 function getSecret() {
   (
     resourceName=${1}
-    keys=${2}
+    key=${2}
     projectName=${3:-$(getProjectName)}
-    if [ -z "${resourceName}" ] || [ -z "${keys}" ]; then
+    if [ -z "${resourceName}" ] || [ -z "${key}" ]; then
       echoError "\ngetSecret; You must specify the 'resourceName' and 'key'.\n"
       exit 1
     fi
 
-    echo $(oc -n ${projectName} extract --to=- --keys=${keys} secret/${resourceName} 2>&1 | sed -n '/#/ !p')
+    echo $(oc -n ${projectName} extract --to=- --keys=${key} secret/${resourceName} 2>&1 | sed -n 2p)
   )
 }
 
@@ -1808,10 +1808,10 @@ function buildPromptCreds(){
   password=${6}
   
   if ([ -z ${userName} ] || [ -z ${password} ]); then
-    echo "Please enter your ${dockerReg} username"
+    echoWarning "Please enter your ${dockerReg} username"
     read userName
 
-    echo "Please enter your ${dockerReg} password"
+    echoWarning "Please enter your ${dockerReg} password"
     read password
   fi
 
@@ -1821,13 +1821,22 @@ function buildPromptCreds(){
   fi
   #create pull secret in each environment we need
   for env in ${credEnvs}; do
+    cred_exists=0
+    
     oc create secret docker-registry ${newCredName} -n ${namespaceName}-${env} \
       --docker-server=${dockerReg} \
       --docker-username=${userName} \
       --docker-password=${password} \
-      --docker-email=unused
-    oc secrets link default ${newCredName} --for=pull
-    oc secrets link builder ${newCredName}
+      --docker-email=unused &> /dev/null || cred_exists=1
+    if (( ! ${cred_exists})); then
+      oc secrets link default ${newCredName} --for=pull
+      oc secrets link builder ${newCredName}
+
+      echoWarning "Created ${newCredName} in ${env}"
+    else
+      echoWarning "${newCredName} already exists in ${env}, skipping..."
+    fi
+    
   done
 
   
@@ -1845,8 +1854,16 @@ function buildCreds() {
 
     userName=$(getSecret ${credName} username ${namespaceName}-tools)
     password=$(getSecret ${credName} password ${namespaceName}-tools)
-
-    buildPromptCreds ${namespaceName} ${newCredName} ${dockerReg} "${credEnvs[@]}" ${userName} ${password}
+    #if we fail to find cred search name do nothing
+    if [ ! -z ${credName} ] && [ ! -z ${userName} ] && [ ! -z ${password} ]; then
+      echoWarning "Found secret ${credName}, would you like to use this as a docker registry pull secret? (y/n)"
+      read resp
+      if [ ${resp} = "y" ]; then
+        buildPromptCreds ${namespaceName} ${newCredName} ${dockerReg} "${credEnvs[@]}" ${userName} ${password}
+      else
+        echo "Done!"
+      fi
+    fi
 }
 
 
