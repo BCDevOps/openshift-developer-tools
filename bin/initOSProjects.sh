@@ -2,6 +2,17 @@
 
 OCTOOLSBIN=$(dirname $0)
 
+#look through the tools env for artifactory-creds
+#setup artifactory/docker pull creds
+USE_PULL_CREDS=${USE_PULL_CREDS:-true}
+CRED_SEARCH_NAME=${CRED_SEARCH_NAME:-artifacts-default}
+PULL_CREDS=${PULL_CREDS:-artifactory-creds}
+DOCKER_REG=${DOCKER_REG:-docker-remote.artifacts.developer.gov.bc.ca}
+PROMPT_CREDS=${PROMPT_CREDS:-false}
+if [ -z ${CRED_ENVS} ]; then
+  CRED_ENVS="tools dev test prod"
+fi
+
 # ===================================================================================
 usage() { #Usage function
   cat <<-EOF
@@ -36,16 +47,8 @@ for project in ${PROJECT_NAMESPACE}-${DEV} ${PROJECT_NAMESPACE}-${TEST} ${PROJEC
 
 done
 
-#look through the tools env for artifactory-creds
-#setup artifactory/docker pull creds
-USE_PULL_CREDS=${USE_PULL_CREDS:-true}
-CRED_SEARCH_NAME=${CRED_SEARCH_NAME:-artifacts-default}
-PULL_CREDS=${PULL_CREDS:-artifactory-creds}
-DOCKER_REG=${DOCKER_REG:-docker-remote.artifacts.developer.gov.bc.ca}
-CRED_ENVS="${CRED_ENVS[@]:-tools dev test prod}"
-PROMPT_CREDS=${PROMPT_CREDS:-false}
 
-
+#build the credentials
 if [ ! -z ${USE_PULL_CREDS} ] && [ ${USE_PULL_CREDS} = true ]; then
   if [ ! -z ${PROMPT_CREDS} ] && [ ${PROMPT_CREDS} = true ]; then
     buildPromptCreds ${PROJECT_NAMESPACE} ${PULL_CREDS} ${DOCKER_REG} "${CRED_ENVS[@]}" ${DOCKER_USERNAME} ${DOCKER_PASSWORD}
