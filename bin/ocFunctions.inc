@@ -1799,7 +1799,7 @@ function getSecret() {
   )
 }
 
-function buildPromptCreds(){
+function registerPullSecretPrompt(){
   namespaceName=${1}
   newCredName=${2}
   dockerReg=${3}
@@ -1842,7 +1842,7 @@ function buildPromptCreds(){
   
 }
 
-function buildCreds() {
+function registerPullSecret() {
     namespaceName=${1}
     credName=${2}
     newCredName=${3}
@@ -1859,7 +1859,7 @@ function buildCreds() {
       echoWarning "Found secret ${credName}, would you like to use this as a docker registry pull secret? (y/n)"
       read resp
       if [ ${resp} = "y" ]; then
-        buildPromptCreds ${namespaceName} ${newCredName} ${dockerReg} "${credEnvs[@]}" ${userName} ${password}
+        registerPullSecretPrompt ${namespaceName} ${newCredName} ${dockerReg} "${credEnvs[@]}" ${userName} ${password}
       else
         echo "Done!"
       fi
