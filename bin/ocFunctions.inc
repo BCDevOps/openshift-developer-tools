@@ -1583,6 +1583,12 @@ function getRecordCounts() {
   # -------------------------------------------------------------------------------
   _dbPodName=${1}
   _databaseName=${2}
+  _resourceSuffix=${3:-${resourceSuffix}}
+
+  # echoWarning "_dbPodName: ${_dbPodName}"
+  # echoWarning "_databaseName: ${_databaseName}"
+  # echoWarning "_resourceSuffix: ${_resourceSuffix}"
+
   if [ -z "${_dbPodName}" ]; then
     echoError "\ngetRecordCounts; You MUST specify the name of the database pod.\n"
     exit 1
@@ -1609,7 +1615,7 @@ function getRecordCounts() {
     language plpgsql;
   '
   runInContainer \
-    ${_dbPodName}${resourceSuffix} \
+    ${_dbPodName}${_resourceSuffix} \
     "psql -d "${_databaseName}" -q -c \"${command}\""
 
   echo
@@ -1626,7 +1632,7 @@ function getRecordCounts() {
     order by 3 desc;
   '
   runInContainer \
-    ${_dbPodName}${resourceSuffix} \
+    ${_dbPodName}${_resourceSuffix} \
     "psql -d "${_databaseName}" -c \"${command}\""
 }
 
