@@ -1811,7 +1811,7 @@ function registerPullSecretPrompt(){
     echoWarning "Please enter your ${dockerReg} username"
     read userName
 
-    echoWarning "Please enter your ${dockerReg} password"
+    echoWarning "Please enter your ${dockerReg} password or login token"
     read password
   fi
 
