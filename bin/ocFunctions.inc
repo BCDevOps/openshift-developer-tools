@@ -1805,6 +1805,93 @@ function getSecret() {
   )
 }
 
+function buildPullSecret(){
+  USE_PULL_CREDS=${1}
+  CRED_SEARCH_NAME=${2}
+  PULL_CREDS=${3}
+  DOCKER_REG=${4}
+  PROMPT_CREDS=${5}
+  CRED_ENVS=${6}
+
+  #build the credentials
+  if [ ! -z ${USE_PULL_CREDS} ] && [ ${USE_PULL_CREDS} = true ]; then
+    if [ ! -z ${PROMPT_CREDS} ] && [ ${PROMPT_CREDS} = true ]; then
+      registerPullSecretPrompt ${PROJECT_NAMESPACE} ${PULL_CREDS} ${DOCKER_REG} "${CRED_ENVS[@]}" ${DOCKER_USERNAME} ${DOCKER_PASSWORD}
+    else
+      registerPullSecret ${PROJECT_NAMESPACE} ${CRED_SEARCH_NAME} ${PULL_CREDS} ${DOCKER_REG} "${CRED_ENVS[@]}"
+    fi
+  fi
+}
+
+function registerPullSecretPrompt(){
+  namespaceName=${1}
+  newCredName=${2}
+  dockerReg=${3}
+  credEnvs=${4}
+  userName=${5}
+  password=${6}
+  
+  if ([ -z ${userName} ] || [ -z ${password} ]); then
+    echoWarning "Please enter your ${dockerReg} username"
+    read userName
+
+    echoWarning "Please enter your ${dockerReg} password or login token"
+    read password
+  fi
+
+  #set cred env to tools if unset
+  if [ -z "${credEnvs}" ]; then
+    credEnvs="tools"
+  fi
+  #create pull secret in each environment we need
+  for env in ${credEnvs}; do
+    cred_exists=0
+    
+    oc create secret docker-registry ${newCredName} -n ${namespaceName}-${env} \
+      --docker-server=${dockerReg} \
+      --docker-username=${userName} \
+      --docker-password=${password} \
+      --docker-email=${userName}@${namespaceName}-${env}.local &> /dev/null || cred_exists=1
+    if (( ! ${cred_exists})); then
+      oc secrets link default ${newCredName}
+      oc secrets link builder ${newCredName}
+
+      echoWarning "Created ${newCredName} in ${env}"
+    else
+      echoWarning "${newCredName} already exists in ${env}, skipping..."
+    fi
+    
+  done
+
+  
+}
+
+function registerPullSecret() {
+    namespaceName=${1}
+    credName=${2}
+    newCredName=${3}
+    dockerReg=${4}
+    credEnvs=${5}
+
+    #search for the credential name, limit to 1st result
+    credName=$(oc get secrets -n ${namespaceName}-tools | sed -n "/${credName}/p" | awk '{print $1}' | head -1)
+
+    userName=$(getSecret ${credName} username ${namespaceName}-tools)
+    password=$(getSecret ${credName} password ${namespaceName}-tools)
+    #if we fail to find cred search name do nothing
+    if [ ! -z ${credName} ] && [ ! -z ${userName} ] && [ ! -z ${password} ]; then
+      echoWarning "Found secret ${credName}, would you like to use this as a docker registry pull secret? (y/n)"
+      read resp
+      if [ ${resp} = "y" ]; then
+        registerPullSecretPrompt ${namespaceName} ${newCredName} ${dockerReg} "${credEnvs[@]}" ${userName} ${password}
+      else
+        echo "Done!"
+      fi
+    fi
+}
+
+
+
 function listBuildRefs() {
   # Lists build configurations and their git references in a convenient column format.
   (
