@@ -48,11 +48,4 @@ for project in ${PROJECT_NAMESPACE}-${DEV} ${PROJECT_NAMESPACE}-${TEST} ${PROJEC
 done
 
 
-#build the credentials
-if [ ! -z ${USE_PULL_CREDS} ] && [ ${USE_PULL_CREDS} = true ]; then
-  if [ ! -z ${PROMPT_CREDS} ] && [ ${PROMPT_CREDS} = true ]; then
-    registerPullSecretPrompt ${PROJECT_NAMESPACE} ${PULL_CREDS} ${DOCKER_REG} "${CRED_ENVS[@]}" ${DOCKER_USERNAME} ${DOCKER_PASSWORD}
-  else
-    registerPullSecret ${PROJECT_NAMESPACE} ${CRED_SEARCH_NAME} ${PULL_CREDS} ${DOCKER_REG} "${CRED_ENVS[@]}"
-  fi
-fi
+buildPullSecret ${USE_PULL_CREDS} ${CRED_SEARCH_NAME} ${PULL_CREDS} ${DOCKER_REG} ${PROMPT_CREDS} "${CRED_ENVS[@]}"

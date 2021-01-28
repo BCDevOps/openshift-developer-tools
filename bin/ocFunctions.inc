@@ -1799,6 +1799,24 @@ function getSecret() {
   )
 }
 
+function buildPullSecret(){
+  USE_PULL_CREDS=${1}
+  CRED_SEARCH_NAME=${2}
+  PULL_CREDS=${3}
+  DOCKER_REG=${4}
+  PROMPT_CREDS=${5}
+  CRED_ENVS=${6}
+
+  #build the credentials
+  if [ ! -z ${USE_PULL_CREDS} ] && [ ${USE_PULL_CREDS} = true ]; then
+    if [ ! -z ${PROMPT_CREDS} ] && [ ${PROMPT_CREDS} = true ]; then
+      registerPullSecretPrompt ${PROJECT_NAMESPACE} ${PULL_CREDS} ${DOCKER_REG} "${CRED_ENVS[@]}" ${DOCKER_USERNAME} ${DOCKER_PASSWORD}
+    else
+      registerPullSecret ${PROJECT_NAMESPACE} ${CRED_SEARCH_NAME} ${PULL_CREDS} ${DOCKER_REG} "${CRED_ENVS[@]}"
+    fi
+  fi
+}
+
 function registerPullSecretPrompt(){
   namespaceName=${1}
   newCredName=${2}
