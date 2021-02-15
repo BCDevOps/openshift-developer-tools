@@ -1859,10 +1859,10 @@ function registerPullSecretPrompt(){
 
     # Always link / relink the pull secret to the service accounts ...
     echoWarning "Linking pull secret, ${newCredName}, to the default service account in ${namespaceName}-${env} ..."
-    oc -n ${namespaceName}-${env} secrets link default ${newCredName} --for=pull
+    oc -n ${namespaceName}-${env} secrets link default ${newCredName}
 
     echoWarning "Linking pull secret, ${newCredName}, to the builder service account in ${namespaceName}-${env} ..."
-    oc -n ${namespaceName}-${env} secrets link builder ${newCredName} --for=pull
+    oc -n ${namespaceName}-${env} secrets link builder ${newCredName}
   done
 }
 
