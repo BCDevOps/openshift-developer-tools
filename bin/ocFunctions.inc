@@ -924,7 +924,7 @@ updateRoutes() {
     routeConfigsLength=$(echo ${routeConfigs} | jq '.items | length')
     echoWarning "Found ${routeConfigsLength} routes to update ..."
 
-    if (( "${routeConfigsLength}" > 0 )); then  
+    if (( "${routeConfigsLength}" > 0 )); then
       for (( itemIndex=0; itemIndex<${routeConfigsLength}; itemIndex++ ))
       do
         routeConfig=$(echo ${routeConfigs} | jq ".items[${itemIndex}]")
@@ -945,7 +945,7 @@ updateRoutes() {
           echoWarning "Creating ${routeName} ..."
           echo ${routeConfig} | oc -n ${projectName} $(getOcAction) -f -
         fi
-        
+
         exitOnError
         echo
       done
@@ -1029,7 +1029,7 @@ updateBuildConfigs() {
           echoWarning "Creating ${buildName} ..."
           echo ${buildConfig} | oc -n ${projectName} $(getOcAction) -f -
         fi
-        
+
         exitOnError
         echo
       done
@@ -1830,7 +1830,7 @@ function registerPullSecretPrompt(){
   credEnvs=${4}
   userName=${5}
   password=${6}
-  
+
   if ([ -z ${userName} ] || [ -z ${password} ]); then
     echoWarning "Please enter your ${dockerReg} username"
     read userName
@@ -1846,24 +1846,24 @@ function registerPullSecretPrompt(){
   #create pull secret in each environment we need
   for env in ${credEnvs}; do
     cred_exists=0
-    
     oc create secret docker-registry ${newCredName} -n ${namespaceName}-${env} \
       --docker-server=${dockerReg} \
       --docker-username=${userName} \
       --docker-password=${password} \
       --docker-email=${userName}@${namespaceName}-${env}.local &> /dev/null || cred_exists=1
     if (( ! ${cred_exists})); then
-      oc secrets link default ${newCredName}
-      oc secrets link builder ${newCredName}
-
-      echoWarning "Created ${newCredName} in ${env}"
+      echoWarning "\nCreated new pull secret, ${newCredName}, in ${namespaceName}-${env} ..."
     else
-      echoWarning "${newCredName} already exists in ${env}, skipping..."
+      echoWarning "\nPull secret, ${newCredName} already exists in ${namespaceName}-${env} ..."
     fi
-    
-  done
 
-  
+    # Always link / relink the pull secret to the service accounts ...
+    echoWarning "Linking pull secret, ${newCredName}, to the default service account in ${namespaceName}-${env} ..."
+    oc -n ${namespaceName}-${env} secrets link default ${newCredName}
+
+    echoWarning "Linking pull secret, ${newCredName}, to the builder service account in ${namespaceName}-${env} ..."
+    oc -n ${namespaceName}-${env} secrets link builder ${newCredName}
+  done
 }
 
 function registerPullSecret() {
@@ -1880,7 +1880,7 @@ function registerPullSecret() {
     password=$(getSecret ${credName} password ${namespaceName}-tools)
     #if we fail to find cred search name do nothing
     if [ ! -z ${credName} ] && [ ! -z ${userName} ] && [ ! -z ${password} ]; then
-      echoWarning "Found secret ${credName}, would you like to use this as a docker registry pull secret? (y/n)"
+      echoWarning "Found secret ${credName}, would you like to use this as a pull secret? (y/n)"
       read resp
       if [ ${resp} = "y" ]; then
         registerPullSecretPrompt ${namespaceName} ${newCredName} ${dockerReg} "${credEnvs[@]}" ${userName} ${password}
