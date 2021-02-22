@@ -1946,14 +1946,80 @@ function registerPullSecret() {
     fi
 }
 
-
-
 function listBuildRefs() {
   # Lists build configurations and their git references in a convenient column format.
   (
     projectName=${1:-${TOOLS}}
     echo
     oc -n ${projectName} get bc --template '{{ range .items }}{{ printf "%s,%s,%s\n" .metadata.name .spec.source.git.uri .spec.source.git.ref}}{{end}}' | sed 's~%!s(<nil>)~-~g' | column -t -s ,
+  )
+}
+
+
+function yqIsInstalled()
+{
+  (
+    # Check for dependancies
+    YQ_EXE=yq
+    if ! isInstalled ${YQ_EXE}; then
+        echoWarning "\nThe ${YQ_EXE} executable is required and was not found on your path.\n"
+
+cat <<-EOF
+The recommended approach to installing the required package(s) is to use either [Homebrew](https://brew.sh/) (MAC)
+or [Chocolatey](https://chocolatey.org/) (Windows).
+
+Windows:
+  - chocolatey install ${YQ_EXE}
+
+MAC:
+  - brew install ${YQ_EXE}
+EOF
+        exit 1
+    fi
+
+    exit 0
+  )
+}
+
+
+function convertJsonToYaml() {
+  (
+    if ! yqIsInstalled; then
+      exit 1
+    fi
+
+    # Get a list of json formatted configuration files for the project ...
+    templates=$(getConfigTemplates $(getTemplateDir) 2>/dev/null)
+    for template in ${templates}; do
+      if [[ "${template}" == *.json ]]; then
+        jsonTemplates+=" ${template}"
+      fi 
+    done
+
+    # echo -e "\nConfiguration Templates:"
+    # for template in ${templates}; do
+    #   echo "  ${template}"
+    # done
+
+    if [ ! -z "${jsonTemplates}" ]; then
+      echoWarning "\nIf you continue, the following configuration files will be converted from json to yaml format:\n"
+      for template in ${jsonTemplates}; do
+        echo "  ${template}"
+      done
+      printAndAskToContinue " "
+
+      for template in ${jsonTemplates}; do
+        outputFilename=$(echo ${template} | sed "s~.json~.yaml~g")
+        echo "Converting ${template} to yaml and writing the content to ${outputFilename} ..."
+        yq eval --prettyPrint "${template}" > "${outputFilename}"
+        exitOnError
+
+        echo -e "Removing ${template} ...\n"
+        rm "${template}"
+      done
+    else
+      echoWarning "\nNo json formatted configuration files were found in your project ..."
+    fi
   )
 }
 
