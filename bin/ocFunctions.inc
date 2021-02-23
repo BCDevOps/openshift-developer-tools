@@ -456,10 +456,11 @@ filterList () {
   )
 }
 
+nspBuildTemplateFilter="build.*"
 getBuildNspTemplates () {
   (
     _searchPaths=${@}
-    echo $(getNspTemplates "build.*" ${_searchPaths})
+    echo $(getNspTemplates "${nspBuildTemplateFilter}" ${_searchPaths})
   )
 }
 
@@ -547,6 +548,11 @@ isBuildConfig() {
   fi
 
   _isBuildConfig=$( grep -l "BuildConfig\|\"ImageStream\"\|kind:.ImageStream$" ${_template} )
+  if [ -z "${_isBuildConfig}" ]; then
+    # Check if it's a NSP for the build (tools) environment ...
+    _isBuildConfig=$(echo "${_template}" | grep ${nspBuildTemplateFilter})
+  fi
+
   if [ -z "${_isBuildConfig}" ]; then
     return 1
   else
