@@ -145,9 +145,22 @@ listProfileDetails() {
       . ${PWD}/${settingsFile}
       
       # List the templates for the profile ...
-      templates=$(getConfigTemplates $(getTemplateDir) 2>/dev/null) 
+      templates=$(getBuildTemplates $(getTemplateDir) 2>/dev/null)
+      echo -e "  Build Templates:"
       for template in ${templates}; do
-        echo "  - ${template}"
+        echo "    - ${template}"
+      done
+
+      templates=$(getDeploymentTemplates $(getTemplateDir) 2>/dev/null)
+      echo -e "\n  Deployment Templates:"
+      for template in ${templates}; do
+        echo "    - ${template}"
+      done
+
+      templates=$(getConfigTemplates $(getTemplateDir) 2>/dev/null)
+      echo -e "\n  Configuration Templates:"
+      for template in ${templates}; do
+        echo "    - ${template}"
       done
     fi
   done

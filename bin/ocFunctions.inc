@@ -422,17 +422,73 @@ getTemplates () {
   )
 }
 
-getBuildTemplates () {
+nspTemplateFilter="\bNetworkSecurityPolicy\b\|\bExternalNetwork\b\|\bNetworkPolicy\b"
+getNspTemplates () {
   (
+    _filter=${1}
+    shift
     _searchPaths=${@}
-    echo $(getTemplates "\bBuildConfig\b\|\bpullSecret\b\|\bImageStream\b\|kind:.ImageStream$" ${_searchPaths})
+    nspTemplates=$(getTemplates "${nspTemplateFilter}" ${_searchPaths})
+    buildAndDeployTemplates+=" $(getTemplates "${buildTemplateFilter}" ${_searchPaths})"
+    buildAndDeployTemplates+=" $(getTemplates "${deploymentTemplateFilter}" ${_searchPaths})"
+    echo $(filterList "${nspTemplates}" "${buildAndDeployTemplates}") | tr " " "\n" | grep ${_filter}
   )
 }
 
+filterList () {
+  (
+    listItems=${1}
+    filterItems=${2}
+
+    OIFS=$IFS
+    IFS=" "
+
+    unset filteredList
+    filterItemsArray=(${filterItems})
+    for listItem in ${listItems}; do
+      if ! contains "${listItem}" "${filterItemsArray[@]}"; then
+        filteredList+=" ${listItem}"
+      fi
+    done
+
+    IFS=$OIFS
+    echo ${filteredList}
+  )
+}
+
+getBuildNspTemplates () {
+  (
+    _searchPaths=${@}
+    echo $(getNspTemplates "build.*" ${_searchPaths})
+  )
+}
+
+getDeploymentNspTemplates () {
+  (
+    _searchPaths=${@}
+    echo $(getNspTemplates "deploy.*" ${_searchPaths})
+  )
+}
+
+buildTemplateFilter="\bBuildConfig\b\|\bpullSecret\b\|\bImageStream\b\|kind:.ImageStream$"
+getBuildTemplates () {
+  (
+    _searchPaths=${@}
+    unset buildTemplates
+    buildTemplates+=" $(getTemplates "${buildTemplateFilter}" ${_searchPaths})"
+    buildTemplates+=" $(getBuildNspTemplates ${_searchPaths})"
+    echo ${buildTemplates}
+  )
+}
+
+deploymentTemplateFilter="\bDeploymentConfig\b\|\bStatefulSet\b\|\bRoute\b\|\bSecret\b"
 getDeploymentTemplates () {
   (
     _searchPaths=${@}
-    echo $(getTemplates "\bDeploymentConfig\b\|\bStatefulSet\b\|\bRoute\b\|\bSecret\b" ${_searchPaths})
+    unset deploymentTemplates
+    deploymentTemplates+=" $(getTemplates "${deploymentTemplateFilter}" ${_searchPaths})"
+    deploymentTemplates+=" $(getDeploymentNspTemplates ${_searchPaths})"
+    echo ${deploymentTemplates}
   )
 }
 
