@@ -95,21 +95,21 @@ generateConfigs() {
     unset overrideScriptVars
 
     if [ -f "${PARAMFILE}" ]; then
-      overrideScriptVars=$(readConf -f -d '\~' ${PARAMFILE})
+      overrideScriptVars="${overrideScriptVars:+~}$(readConf -f -d '\~' ${PARAMFILE})"
       PARAMFILE="--param-file=${PARAMFILE}"
     else
       PARAMFILE=""
     fi
 
     if [ -f "${ENVPARAM}" ]; then
-      overrideScriptVars+="~$(readConf -f -d '\~' ${ENVPARAM})"
+      overrideScriptVars+="${overrideScriptVars:+~}$(readConf -f -d '\~' ${ENVPARAM})"
       ENVPARAM="--param-file=${ENVPARAM}"
     else
       ENVPARAM=""
     fi
 
     if [ -f "${LOCALPARAM}" ]; then
-      overrideScriptVars+="~$(readConf -f -d '\~' ${LOCALPARAM})"
+      overrideScriptVars+="${overrideScriptVars:+~}$(readConf -f -d '\~' ${LOCALPARAM})"
       LOCALPARAM="--param-file=${LOCALPARAM}"
     else
       LOCALPARAM=""
