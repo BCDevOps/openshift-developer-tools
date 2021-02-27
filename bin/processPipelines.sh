@@ -48,7 +48,7 @@ for _jenkinsFile in ${JENKINS_FILES}; do
     _localParams=""
   fi
 
-  oc process --local --filename=${_template} ${_localParams} ${_defaultParams} > ${_output}
+  oc -n ${TOOLS} process --local --filename=${_template} ${_localParams} ${_defaultParams} > ${_output}
   exitOnError
 done
 
