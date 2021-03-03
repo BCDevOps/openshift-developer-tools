@@ -181,6 +181,48 @@ dcExists (){
   )
 }
 
+isExists (){
+  (
+    _isName=${1}
+    _namespace=${2:-${TOOLS}}
+
+    if [ -z "${_isName}" ]; then
+      echo -e \\n"isExists; Missing parameter!"\\n
+      exit 1
+    fi
+
+    _isInstanceName=$(oc -n ${_namespace} get is ${_isName} --ignore-not-found --template "{{ .metadata.name }}")
+    if [ ! -z "${_isInstanceName}" ]; then
+      # The  build configuration exists ...
+      return 0
+    else
+      # The build configuration does not exist ...
+      return 1
+    fi
+  )
+}
+
+bcExists (){
+  (
+    _bcName=${1}
+    _namespace=${2:-${TOOLS}}
+
+    if [ -z "${_bcName}" ]; then
+      echo -e \\n"bcExists; Missing parameter!"\\n
+      exit 1
+    fi
+
+    _bcInstanceName=$(oc -n ${_namespace} get bc ${_bcName} --ignore-not-found --template "{{ .metadata.name }}")
+    if [ ! -z "${_bcInstanceName}" ]; then
+      # The  build configuration exists ...
+      return 0
+    else
+      # The build configuration does not exist ...
+      return 1
+    fi
+  )
+}
+
 assignRole (){
   (
     role=$1
