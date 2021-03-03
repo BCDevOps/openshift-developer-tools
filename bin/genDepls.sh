@@ -34,11 +34,6 @@ if [ -f ${OCTOOLSBIN}/ocFunctions.inc ]; then
 fi
 # ==============================================================================
 
-# Switch to desired project space ...
-echo
-switchProject
-exitOnError
-
 echo -e \\n"Removing dangling configuration files ..."
 cleanConfigs
 cleanOverrideParamFiles

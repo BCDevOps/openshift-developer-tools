@@ -22,11 +22,6 @@ if [ -f ${OCTOOLSBIN}/ocFunctions.inc ]; then
 fi
 # ==============================================================================
 
-# Switch to the Tools project space ...
-echo
-switchProject ${TOOLS}
-exitOnError
-
 echo -e \\n"Removing dangling configuration files ..."
 cleanBuildConfigs
 
@@ -66,13 +61,10 @@ if [ -z ${GEN_ONLY} ]; then
   echo -e \\n"Pause here until the auto triggered builds complete, and then hit a key to continue the script."
   read -n1 -s -r -p "Press a key to continue..." key
   echo -e \\n
-
-  switchProject ${TOOLS}
-  exitOnError
   
   for build in ${builds}; do
     echo -e \\n"Manually triggering build of ${build}..."\\n
-    oc start-build ${build}
+    oc -n ${TOOLS} start-build ${build}
       exitOnError
     echo -e \\n"Use the OpenShift Console to monitor the build in the ${TOOLS} project."
     echo -e "Pause here until the build completes, and then hit a key to continue the script."

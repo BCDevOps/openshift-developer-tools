@@ -146,7 +146,7 @@ processSecret () {
     PARAMFILE=""
   fi
   
-  oc process  --local --filename=${_template} ${PARAMFILE} > ${_configFile}
+  oc -n ${_PROJECT_NAME} process  --local --filename=${_template} ${PARAMFILE} > ${_configFile}
   exitOnError
   
   # Always remove the temporay parameter file ...
@@ -155,7 +155,7 @@ processSecret () {
   fi
 
   if [ -z ${GEN_ONLY} ]; then
-    oc $(getOcAction) -f ${_configFile}
+    oc -n ${_PROJECT_NAME} $(getOcAction) -f ${_configFile}
     exitOnError
   fi
 
@@ -167,12 +167,9 @@ processSecret () {
 # ==============================================================================
 
 _OUTPUT_DIR=$(getRelativeOutputDir)
+_PROJECT_NAME=$(getProjectName)
 
-echo -e \\n"Deploying secret(s) into the ${DEPLOYMENT_ENV_NAME} (${PROJECT_NAMESPACE}-${DEPLOYMENT_ENV_NAME}) environment ..."\\n
-
-# Switch to the selected project ...
-switchProject
-exitOnError
+echo -e \\n"Deploying secret(s) into the ${DEPLOYMENT_ENV_NAME} (${_PROJECT_NAME}) environment ..."\\n
 
 # Get list of all of the secret templates in the project ...
 pushd ${PROJECT_DIR} >/dev/null

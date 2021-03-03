@@ -181,6 +181,48 @@ dcExists (){
   )
 }
 
+isExists (){
+  (
+    _isName=${1}
+    _namespace=${2:-${TOOLS}}
+
+    if [ -z "${_isName}" ]; then
+      echo -e \\n"isExists; Missing parameter!"\\n
+      exit 1
+    fi
+
+    _isInstanceName=$(oc -n ${_namespace} get is ${_isName} --ignore-not-found --template "{{ .metadata.name }}")
+    if [ ! -z "${_isInstanceName}" ]; then
+      # The  build configuration exists ...
+      return 0
+    else
+      # The build configuration does not exist ...
+      return 1
+    fi
+  )
+}
+
+bcExists (){
+  (
+    _bcName=${1}
+    _namespace=${2:-${TOOLS}}
+
+    if [ -z "${_bcName}" ]; then
+      echo -e \\n"bcExists; Missing parameter!"\\n
+      exit 1
+    fi
+
+    _bcInstanceName=$(oc -n ${_namespace} get bc ${_bcName} --ignore-not-found --template "{{ .metadata.name }}")
+    if [ ! -z "${_bcInstanceName}" ]; then
+      # The  build configuration exists ...
+      return 0
+    else
+      # The build configuration does not exist ...
+      return 1
+    fi
+  )
+}
+
 assignRole (){
   (
     role=$1
@@ -866,6 +908,10 @@ getProjectName() {
 
 switchProject() {
   _projectName=$(getProjectName ${1})
+
+  echoWarning "switchProject has been deprecated in favor of using the oc -n option to specify the target namespace."
+  echoWarning "Please update your scripts accordingly."
+
   echo "Switching to ${_projectName} ..."
   oc project ${_projectName} >/dev/null
 }
@@ -879,7 +925,7 @@ getAllPods() {
   if [ ! -z "${_pods}" ]; then
     echo "${_pods}"
   else
-    oc get dc | awk '{if(NR>1)print $1}'
+    oc -n $(getProjectName) get dc | awk '{if(NR>1)print $1}'
   fi
 }
 
@@ -1017,6 +1063,7 @@ updateRoutes() {
 
 deployConfigs() {
   _configFiles=$(getConfigFiles ${@})
+  _projectName=$(getProjectName)
   for configFile in ${_configFiles}; do
 
     if updateOperation; then
@@ -1030,10 +1077,10 @@ deployConfigs() {
         continue
       fi
 
-      echo "${config}" | oc $(getOcAction) -f -
+      echo "${config}" | oc -n ${_projectName} $(getOcAction) -f -
       exitOnError
     else
-      oc $(getOcAction) -f ${configFile}
+      oc -n ${_projectName} $(getOcAction) -f ${configFile}
       exitOnError
     fi
   done
@@ -1101,6 +1148,8 @@ updateBuildConfigs() {
 
 deployBuildConfigs() {
   _configFiles=$(getBuildConfigFiles ${@})
+  projectName=${TOOLS}
+
   for configFile in ${_configFiles}; do
     if updateOperation; then
       # Update existing buildConfigs first ...
@@ -1114,10 +1163,10 @@ deployBuildConfigs() {
         continue
       fi
 
-      echo "${config}" | oc $(getOcAction) -f -
+      echo "${config}" | oc -n ${projectName} $(getOcAction) -f -
       exitOnError
     elif createOperation; then
-      oc $(getOcAction) -f ${configFile}
+      oc -n ${projectName} $(getOcAction) -f ${configFile}
       exitOnError
     else
       echoError "\nUnrecognized operation, $(getOperation).  Unable to process build configuration.\n"
@@ -1191,7 +1240,7 @@ runInContainerInteractively() {
   echo -e "\t${_command}"
   echo
 
-  oc exec -i "${_podInstanceName}" -- bash -c "${_command}"
+  oc -n $(getProjectName) exec -i "${_podInstanceName}" -- bash -c "${_command}"
 }
 
 isInstalled(){
@@ -1783,10 +1832,6 @@ deleteWallets() {
   fi
 
   printAndAskToContinue "If you contiune the wallets from ${_podNames} will be deleted.  All data will be lost."
-
-  switchProject
-  exitOnError
-
   deleteFromPods "/home/indy/.indy_client/wallet/*" ${_podNames}
 }
 

@@ -21,11 +21,11 @@ fi
 
 # ===================================================================================
 # Fix routes
-echo -e "Update routes to default in ${PROJECT_NAMESPACE}-${DEPLOYMENT_ENV_NAME} ..."
-switchProject
+projectName=$(getProjectName)
+echo -e "Update routes to default in ${projectName} ..."
 
 for route in ${routes}; do
-  oc delete route ${route}
-  oc create route edge --service=${route}
+  oc -n ${projectName} delete route ${route}
+  oc -n ${projectName} create route edge --service=${route}
   sleep 3 # Allow the creation of the route to complete
 done

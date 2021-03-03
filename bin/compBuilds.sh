@@ -26,7 +26,6 @@ fi
 # Functions:
 # -----------------------------------------------------------------------------------------------------------------
 generateBuildConfigs() {
-
   # Suppress the error message from getBuildTemplates when no search path is returned by getTemplateDir
   BUILDS=$(getBuildTemplates $(getTemplateDir ${_component_name}) 2>/dev/null || "")
 
@@ -67,7 +66,7 @@ generateBuildConfigs() {
       LOCALPARAM=""
     fi
 
-    oc process  --local --filename=${_template} ${LOCALPARAM} ${PARAMFILE} > ${_buildConfig}
+    oc -n ${TOOLS} process --local --filename=${_template} ${LOCALPARAM} ${PARAMFILE} > ${_buildConfig}
     exitOnError
   done
 }
