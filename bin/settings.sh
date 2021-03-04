@@ -397,7 +397,7 @@ if ! settingsLoaded; then
   export PIPELINE_JSON=${PIPELINE_JSON:-https://raw.githubusercontent.com/BCDevOps/openshift-tools/master/provisioning/pipeline/resources/pipeline-build.json}
   export COMPONENT_JENKINSFILE=${COMPONENT_JENKINSFILE:-../Jenkinsfile}
   export PIPELINEPARAM=${PIPELINEPARAM:-pipeline.param}
-  export APPLICATION_DOMAIN_POSTFIX=${APPLICATION_DOMAIN_POSTFIX:-.pathfinder.gov.bc.ca}
+  export APPLICATION_DOMAIN_POSTFIX=${APPLICATION_DOMAIN_POSTFIX:-.apps.silver.devops.gov.bc.ca}
 
   # Jenkins account settings for initialization
   export JENKINS_ACCOUNT_NAME=${JENKINS_ACCOUNT_NAME:-jenkins}

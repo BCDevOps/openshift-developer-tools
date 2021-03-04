@@ -204,12 +204,6 @@ generateParameterFilter (){
     p ) # Prod
       _environment=${PROD}
       ;;
-    l ) # Local Files
-      _parameterFilters="${_parameterFilters}s~\(^MEMORY_LIMIT=\).*$~\10Mi~;"
-      _parameterFilters="${_parameterFilters}s~\(^MEMORY_REQUEST=\).*$~\10Mi~;"
-      _parameterFilters="${_parameterFilters}s~\(^CPU_LIMIT=\).*$~\10~;"
-      _parameterFilters="${_parameterFilters}s~\(^CPU_REQUEST=\).*$~\10~;"
-      ;;
   esac
 
   _name=$(basename "${_templateName}")
