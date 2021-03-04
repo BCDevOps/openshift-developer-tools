@@ -695,8 +695,8 @@ recyclePods() {
 
     _pods=${@}
     if [ -z "${_pods}" ]; then
-      echo -e \\n"recyclePods; Missing parameter!  You must specify the name of at least one pod."\\n
-      exit 1
+      _pods=$(getAllPods)
+      echoWarning "\nRecycling Scaling all pods;" ${_pods}\\n
     fi
 
     scaleDown ${flags} ${_pods}
@@ -720,8 +720,8 @@ scaleUp() {
 
     _pods=${@}
     if [ -z "${_pods}" ]; then
-      echo -e \\n"scaleUp; Missing parameter!  You must specify the name of at least one pod."\\n
-      exit 1
+      _pods=$(getAllPods)
+      echoWarning "\nScaling all pods;" ${_pods}\\n
     fi
 
     for _pod in ${_pods}; do
@@ -784,8 +784,8 @@ scaleDown() {
 
     _pods=${@}
     if [ -z "${_pods}" ]; then
-      echo -e \\n"scaleDown; Missing parameter!  You must specify the name of at least one pod."\\n
-      exit 1
+      _pods=$(getAllPods)
+      echoWarning "\nScaling all pods;" ${_pods}\\n
     fi
 
     for _pod in ${_pods}; do
