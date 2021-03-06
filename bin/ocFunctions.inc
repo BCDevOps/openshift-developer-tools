@@ -2032,7 +2032,6 @@ EOF
   )
 }
 
-
 function convertJsonToYaml() {
   (
     if ! yqIsInstalled; then
@@ -2044,7 +2043,7 @@ function convertJsonToYaml() {
     for template in ${templates}; do
       if [[ "${template}" == *.json ]]; then
         jsonTemplates+=" ${template}"
-      fi 
+      fi
     done
 
     # echo -e "\nConfiguration Templates:"
@@ -2071,6 +2070,101 @@ function convertJsonToYaml() {
     else
       echoWarning "\nNo json formatted configuration files were found in your project ..."
     fi
+  )
+}
+
+function getRoutes()
+{
+  (
+    local OPTIND
+    unset local filter
+    unset local cluster
+    while getopts f:d: FLAG; do
+      case $FLAG in
+        f )
+          local filter=${OPTARG}
+          ;;
+        d )
+          local cluster=${OPTARG}
+          ;;
+      esac
+    done
+    shift $((OPTIND-1))
+
+    if [ ! -z "${cluster}" ]; then
+      context=$(oc config get-contexts | sed 's/*/ /g' | grep ${cluster} | awk '{print $1}' | head -n 1)
+    else
+      context=$(oc config current-context)
+    fi
+
+    if [ -z ${FULLY_QUALIFIED_NAMESPACE} ]; then
+      projects=$(oc --context=${context} projects -q)
+    else
+      projects=$(getProjectName)
+    fi
+
+    if [ ! -z "${filter}" ]; then
+      echoWarning "\nFiltering route list on '${filter}' ..."
+    fi
+
+    for project in ${projects}; do
+      routes=$(oc -n ${project} --context=${context} get route --template '{{ range $item := .items }}{{if $item.spec.path}}{{ printf "%s,%s%s\n" $item.metadata.name $item.spec.host $item.spec.path}}{{ else }}{{ printf "%s,%s\n" $item.metadata.name $item.spec.host}}{{end}}{{end}}')
+
+      if [ ! -z "${filter}" ]; then
+        routes=$(echo "${routes}" | grep "${filter}")
+      fi
+
+      if [ ! -z "${routes}" ]; then
+        echoWarning \\n"${project}:"
+        echo -e "NAME:,HOST:\n${routes}" | column -t -s ,
+      fi
+    done
+  )
+}
+
+function getAllowLists()
+{
+  (
+    local OPTIND
+    unset local filter
+    unset local cluster
+    while getopts f:d: FLAG; do
+      case $FLAG in
+        f )
+          local filter=${OPTARG}
+          ;;
+        d )
+          local cluster=${OPTARG}
+          ;;
+      esac
+    done
+    shift $((OPTIND-1))
+
+    if [ ! -z "${cluster}" ]; then
+      context=$(oc config get-contexts | sed 's/*/ /g' | grep ${cluster} | awk '{print $1}' | head -n 1)
+    else
+      context=$(oc config current-context)
+    fi
+
+    if [ -z ${FULLY_QUALIFIED_NAMESPACE} ]; then
+      projects=$(oc --context=${context} projects -q)
+    else
+      projects=$(getProjectName)
+    fi
+
+    # Filter the project list ...
+    if [ ! -z "${filter}" ]; then
+      echoWarning "\nFiltering project list on '${filter}' ..."
+      projects=$(echo "${projects}" | grep "${filter}")
+    fi
+
+    for project in ${projects}; do
+      allowLists=$(oc -n ${project} --context=${context} get route --template '{{ range $item := .items }}{{ range $key,$value := .metadata.annotations }}{{ if (eq $key "haproxy.router.openshift.io/ip_whitelist") }}{{ printf "%s,%s\n" $item.metadata.name $value }}{{ end }}{{ end }}{{end}}')
+      if [ ! -z "${allowLists}" ]; then
+        echoWarning \\n"${project}:"
+        echo -e "NAME:,ALLOW LIST:\n${allowLists}" | column -t -s ,
+      fi
+    done
   )
 }
 
