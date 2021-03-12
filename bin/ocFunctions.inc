@@ -1966,7 +1966,8 @@ function registerPullSecretPrompt(){
 
     # Always link / relink the pull secret to the service accounts ...
     echoWarning "Linking pull secret, ${newCredName}, to the default service account in ${namespaceName}-${env} ..."
-    oc -n ${namespaceName}-${env} secrets link default ${newCredName}
+    # --for=pull is required for builds and deployments to be able to authenticate correctly when pulling images
+    oc -n ${namespaceName}-${env} secrets link default ${newCredName} --for=pull
 
     echoWarning "Linking pull secret, ${newCredName}, to the builder service account in ${namespaceName}-${env} ..."
     oc -n ${namespaceName}-${env} secrets link builder ${newCredName}
