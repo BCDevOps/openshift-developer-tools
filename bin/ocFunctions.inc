@@ -1914,7 +1914,7 @@ function getSecret() {
 
 function buildPullSecret(){
   USE_PULL_CREDS=${1}
-  CRED_SEARCH_NAME=${2}
+  CRED_SEARCH_NAMES=${2}
   PULL_CREDS=${3}
   DOCKER_REG=${4}
   PROMPT_CREDS=${5}
@@ -1923,9 +1923,9 @@ function buildPullSecret(){
   #build the credentials
   if [ ! -z ${USE_PULL_CREDS} ] && [ ${USE_PULL_CREDS} = true ]; then
     if [ ! -z ${PROMPT_CREDS} ] && [ ${PROMPT_CREDS} = true ]; then
-      registerPullSecretPrompt ${PROJECT_NAMESPACE} ${PULL_CREDS} ${DOCKER_REG} "${CRED_ENVS[@]}" ${DOCKER_USERNAME} ${DOCKER_PASSWORD}
+      registerPullSecretPrompt "${PROJECT_NAMESPACE}" "${PULL_CREDS}" "${DOCKER_REG}" "${CRED_ENVS[@]}" "${DOCKER_USERNAME}" "${DOCKER_PASSWORD}"
     else
-      registerPullSecret ${PROJECT_NAMESPACE} ${CRED_SEARCH_NAME} ${PULL_CREDS} ${DOCKER_REG} "${CRED_ENVS[@]}"
+      registerPullSecret "${PROJECT_NAMESPACE}" "${CRED_SEARCH_NAMES}" "${PULL_CREDS}" "${DOCKER_REG}" "${CRED_ENVS[@]}"
     fi
   fi
 }
@@ -1966,7 +1966,8 @@ function registerPullSecretPrompt(){
 
     # Always link / relink the pull secret to the service accounts ...
     echoWarning "Linking pull secret, ${newCredName}, to the default service account in ${namespaceName}-${env} ..."
-    oc -n ${namespaceName}-${env} secrets link default ${newCredName}
+    # --for=pull is required for builds and deployments to be able to authenticate correctly when pulling images
+    oc -n ${namespaceName}-${env} secrets link default ${newCredName} --for=pull
 
     echoWarning "Linking pull secret, ${newCredName}, to the builder service account in ${namespaceName}-${env} ..."
     oc -n ${namespaceName}-${env} secrets link builder ${newCredName}
@@ -1975,17 +1976,21 @@ function registerPullSecretPrompt(){
 
 function registerPullSecret() {
     namespaceName=${1}
-    credName=${2}
+    credSearchNames=${2}
     newCredName=${3}
     dockerReg=${4}
     credEnvs=${5}
 
-    #search for the credential name, limit to 1st result
-    credName=$(oc get secrets -n ${namespaceName}-tools | sed -n "/${credName}/p" | awk '{print $1}' | head -1)
+    for credSearchName in ${credSearchNames}; do
+      credSearchFilter+="${credSearchName}\|"
+    done
+    credSearchFilter=$(echo ${credSearchFilter} | sed 's~[\|]*$~~g')
 
+    credName=$(oc -n ${namespaceName}-tools get secrets --template '{{ range $item := .items }}{{ if (eq $item.type "kubernetes.io/basic-auth") }}{{ printf "%s\n" $item.metadata.name}}{{ end }}{{end}}' | sed -n "/${credSearchFilter}/p")
     userName=$(getSecret ${credName} username ${namespaceName}-tools)
     password=$(getSecret ${credName} password ${namespaceName}-tools)
-    #if we fail to find cred search name do nothing
+
+    # If we fail to find cred search name do nothing
     if [ ! -z ${credName} ] && [ ! -z ${userName} ] && [ ! -z ${password} ]; then
       echoWarning "Found secret ${credName}, would you like to use this as a pull secret? (y/n)"
       read resp

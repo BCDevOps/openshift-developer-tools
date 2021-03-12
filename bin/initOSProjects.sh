@@ -2,10 +2,9 @@
 
 OCTOOLSBIN=$(dirname $0)
 
-#look through the tools env for artifactory-creds
-#setup artifactory/docker pull creds
+# Setup artifactory/docker pull creds
 USE_PULL_CREDS=${USE_PULL_CREDS:-true}
-CRED_SEARCH_NAME=${CRED_SEARCH_NAME:-artifacts-default}
+CRED_SEARCH_NAMES=${CRED_SEARCH_NAMES}
 PULL_CREDS=${PULL_CREDS:-artifactory-creds}
 DOCKER_REG=${DOCKER_REG:-docker-remote.artifacts.developer.gov.bc.ca}
 PROMPT_CREDS=${PROMPT_CREDS:-false}
@@ -47,5 +46,9 @@ for project in ${PROJECT_NAMESPACE}-${DEV} ${PROJECT_NAMESPACE}-${TEST} ${PROJEC
 
 done
 
+# Search for the default artifactory credentials.  The naming convention changed at one point.
+if [ -z ${CRED_SEARCH_NAMES} ]; then
+  CRED_SEARCH_NAMES="artifacts-default default-${PROJECT_NAMESPACE}"
+fi
 
-buildPullSecret ${USE_PULL_CREDS} ${CRED_SEARCH_NAME} ${PULL_CREDS} ${DOCKER_REG} ${PROMPT_CREDS} "${CRED_ENVS[@]}"
+buildPullSecret "${USE_PULL_CREDS}" "${CRED_SEARCH_NAMES}" "${PULL_CREDS}" "${DOCKER_REG}" "${PROMPT_CREDS}" "${CRED_ENVS[@]}"
