@@ -1735,7 +1735,7 @@ function getRecordCounts() {
       table_schema,
       table_name,
       count_rows(table_schema, table_name),
-      pg_size_pretty( pg_total_relation_size(table_name) ) as disk_usage
+      pg_size_pretty(pg_total_relation_size(CAST(table_name as regclass))) as disk_usage
     from information_schema.tables
     where
       table_schema not in ('"'"'pg_catalog'"'"', '"'"'information_schema'"'"')
