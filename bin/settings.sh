@@ -25,6 +25,11 @@ globalUsage() {
           $0 -p myprofile -e null profileDetails      - List the details for the 'myprofile' profile.
           $0 -p default -e null profileDetails all    - List the details for all of the profiles in the project.
 
+    listBuildRefs
+      - Get a list of your project's build configurations and source code references.
+        Example:
+          $0 -p default -e null listBuildRefs
+
   Global Options:
     - Note: Local script options will override these global options.
   ========
@@ -334,7 +339,7 @@ if ! settingsLoaded; then
     else
       globalArgument=$(echo "${!OPTIND}" | tr '[:upper:]' '[:lower:]')
       case "${globalArgument}" in
-        profiledetails|listprofiles)
+        profiledetails|listprofiles|listbuildrefs)
           _globalCmd=${globalArgument}
           ;;
         *)
@@ -475,6 +480,10 @@ if ! settingsLoaded; then
       listprofiles)
         echo
         listProfileDetails $(getProfiles)
+        ;;
+
+      listbuildrefs)
+        listBuildRefs
         ;;
 
       *)
