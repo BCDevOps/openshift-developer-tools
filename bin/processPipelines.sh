@@ -2,6 +2,10 @@
 
 OCTOOLSBIN=$(dirname $0)
 
+if [ -z "${SETTINGS_LOADED}" ] && [ -f ${OCTOOLSBIN}/settings.sh ]; then
+  . ${OCTOOLSBIN}/settings.sh
+fi
+
 if [ -f ${OCTOOLSBIN}/ocFunctions.inc ]; then
   . ${OCTOOLSBIN}/ocFunctions.inc
 fi
