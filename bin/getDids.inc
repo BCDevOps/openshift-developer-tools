@@ -74,6 +74,9 @@ function getDids()
     for project in ${projects}; do
       echo -e "\e[1A\e[KScanning project '${project}' ..."
 
+      # Get project name
+      projectDisplayName=$(oc get project ${project} -o json | jq --raw-output '.metadata.annotations."openshift.io/display-name"')
+
       # Get a list of seeds in each environment ...
       seeds=$(oc -n ${project} --context=${context} get secret --template '{{ range $item := .items }}{{if $item.data.seed}}{{ printf "%s,%s\n" $item.metadata.name $item.data.seed}}{{end}}{{end}}')
 
@@ -88,7 +91,7 @@ function getDids()
           # Scan for the DID on the Sovrin Ledgers
           ledgers="SOVRIN_STAGINGNET SOVRIN_MAINNET SOVRIN_BUILDERNET"
           for ledger in ${ledgers}; do
-            result=$(curl -s "https://indyscan.io/api/networks/${ledger}/ledgers/domain/txs?size=1&filterTxNames=%5B%22NYM%22%5D&format=expansion&sortFromRecent=true&search=${did}")
+            result=$(curl -s "https://indyscan.io/api/networks/${ledger}/ledgers/domain/txs?filterTxNames=%5B%22NYM%22%5D&format=expansion&sortFromRecent=true&search=${did}")
 
             jqQuery="[.[].idata.txn.data | select(.dest==\"${did}\")][0]"
             parsedResult=$(echo "${result}" | jq --raw-output "${jqQuery}")
@@ -114,7 +117,7 @@ function getDids()
             lastUsedFor="Unknown"
           fi
 
-          didList+="${project},${item%%,*},${did},${ledger},${role},${lastUsedDate},${lastUsedFor}\n"
+          didList+="${project},${projectDisplayName},${item%%,*},${did},${ledger},${role},${lastUsedDate},${lastUsedFor}\n"
         done
       fi
     done
@@ -135,7 +138,7 @@ function getDids()
     echo -e "\e[1A\e[K"
     didList=$(echo "${didList}" | sed 's~\\n~\n~g')
     itemCount=$(echo "${didList}" | wc -l)
-    result="$(echo -e "PROJECT:,NAME:,DID:,LEDGER:,ROLE:,LAST USED DATE:,LAST USED FOR:\n${didList}")"
+    result="$(echo -e "PROJECT:,DISPLAY NAME:,NAME:,DID:,LEDGER:,ROLE:,LAST USED DATE:,LAST USED FOR:\n${didList}")"
     echoWarning "Writing results to $(pwd)/DID-List.csv ...\n"
     echo "${result}" > DID-List.csv
     echoWarning "Results (${itemCount}):"
