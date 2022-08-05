@@ -17,7 +17,8 @@ usage() {
     dids [-f <filter>] [-d <cluster>]
       - Get a list of dids for all the projects in a cluster.
       Options:
-        -f <filter>: Not implemented yet.
+        -f <filter>: The keyword to filter the list on.  For example SOVRIN_STAGINGNET to return only results from Sovrin StagingNet, 
+                     or a99fd4-prod to return only results from the a99fd4-prod namespace in OCP.
         -d <cluster>: Defines the target cluster
       Examples:
         ${0} dids
