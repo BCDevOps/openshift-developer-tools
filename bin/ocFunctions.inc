@@ -2005,7 +2005,8 @@ function registerPullSecret() {
 function listBuildRefs() {
   # Lists build configurations and their git references in a convenient column format.
   (
-    projectName=${1:-${TOOLS}}
+    projectName=${1:-${FULLY_QUALIFIED_NAMESPACE:-${TOOLS}}}
+
     echo
     oc -n ${projectName} get bc --template '{{ range .items }}{{ printf "%s,%s,%s\n" .metadata.name .spec.source.git.uri .spec.source.git.ref}}{{end}}' | sed 's~%!s(<nil>)~-~g' | column -t -s ,
   )
