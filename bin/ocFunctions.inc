@@ -524,7 +524,7 @@ getBuildTemplates () {
   )
 }
 
-deploymentTemplateFilter="\bDeployment\b\|\bDeploymentConfig\b\|\bStatefulSet\b\|\bRoute\b\|\bSecret\b"
+deploymentTemplateFilter="\bDeployment\b\|\bDeploymentConfig\b\|\bStatefulSet\b\|\bRoute\b\|\bSecret\b\|\bCronJob\b"
 getDeploymentTemplates () {
   (
     _searchPaths=${@}
