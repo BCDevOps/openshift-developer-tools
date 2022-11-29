@@ -171,7 +171,7 @@ generateConfigMap() {
     _from_file_type="--from-file"
   fi
   
-  oc create configmap ${_config_map_name} ${_from_file_type} ${_source_file} --dry-run -o ${_output_format} > ${_output_file}
+  oc create configmap ${_config_map_name} ${_from_file_type} ${_source_file} --dry-run=client -o ${_output_format} > ${_output_file}
 }
 
 initialize(){

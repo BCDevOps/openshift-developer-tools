@@ -1047,8 +1047,8 @@ updateRoutes() {
           # --force - Forces the delete and replace
           # --save-config - Maintains compatibility with 'oc apply'
           #
-          # 'oc patch' is used with --dry-run it retain any additional route configurations such as certificates.
-          oc -n ${projectName} patch route ${routeName} --dry-run -o json -p "${routeConfig}" | oc -n ${projectName} replace --force --save-config -f -
+          # 'oc patch' is used with --dry-run=client it retains any additional route configurations such as certificates.
+          oc -n ${projectName} patch route ${routeName} --dry-run=client -o json -p "${routeConfig}" | oc -n ${projectName} replace --force --save-config -f -
         else
           echoWarning "Creating ${routeName} ..."
           echo ${routeConfig} | oc -n ${projectName} $(getOcAction) -f -
@@ -1131,9 +1131,9 @@ updateBuildConfigs() {
           echoWarning "Patching ${buildName} ..."
           # Filter out the triggers from the new config so we can retain the existing ones
           filteredConfig=$(echo "${buildConfig}" | jq 'if .items != null then del(.items[] | select(.kind == "BuildConfig") | .spec.triggers) else del(select(.kind == "BuildConfig") | .spec.triggers) end')
-          # 'oc patch' is used with --dry-run it retain the trigger settings of the exiting buildConfig.
+          # 'oc patch' is used with --dry-run=client it retains the trigger settings of the exiting buildConfig.
           # This ensures exiting webhooks are not broken when the build is updated.
-          oc -n ${projectName} patch bc ${buildName} --dry-run -o json -p "${filteredConfig}" | oc -n ${projectName} $(getOcAction) -f -
+          oc -n ${projectName} patch bc ${buildName} --dry-run=client -o json -p "${filteredConfig}" | oc -n ${projectName} $(getOcAction) -f -
         else
           echoWarning "Creating ${buildName} ..."
           echo ${buildConfig} | oc -n ${projectName} $(getOcAction) -f -
