@@ -55,7 +55,25 @@ printAndAskToContinue() {
 
   # If we get here the user did NOT press Ctrl-C ...
   return 0
-  }
+}
+
+printAndWaitForYes() {
+  _msg=${@}
+  if [ -z "${_msg}" ]; then
+    echo -e \\n"printAndWaitForYes; Missing parameter!"\\n
+    exit 1
+  fi
+
+  echoWarning "\n${_msg}"
+  read -r -p $'\e[33mWould you like to continue? [y/n]\e[0m ' response
+  echo
+  # https://stackoverflow.com/a/3232082
+  if [[ "$response" =~ ^([yY][eE][sS]|[yY])$ ]]; then
+    return 0
+  else
+    return 1
+  fi
+}
 
 exitOnError() {
   rtnCd=$?
