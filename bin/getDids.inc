@@ -1,8 +1,45 @@
+#!/bin/bash
+UNKNOWN="Unknown"
+QUERY_TIMEOUT=30
+BCOVRIN_QUERY_TIMEOUT=600
+TXN_TYPES="
+0=NODE
+1=NYM
+3=GET_TXN
+4=TXN_AUTHOR_AGREEMENT
+5=TXN_AUTHOR_AGREEMENT_AML
+6=GET_TXN_AUTHOR_AGREEMENT
+7=GET_TXN_AUTHOR_AGREEMENT_AML
+8=DISABLE_ALL_TXN_AUTHR_AGRMTS
+100=ATTRIB
+101=SCHEMA
+102=CRED_DEF
+103=DISCLO
+104=GET_ATTR
+105=GET_NYM
+107=GET_SCHEMA
+108=GET_CLAIM_DEF
+109=POOL_UPGRADE
+110=NODE_UPGRADE
+111=POOL_CONFIG
+112=CHANGE_KEY
+113=REVOC_REG_DEF
+114=REVOC_REG_ENTRY
+115=GET_REVOC_REG_DEF
+116=GET_REVOC_REG
+117=GET_REVOC_REG_DELTA
+118=POOL_RESTART
+119=VALIDATOR_INFO
+120=AUTH_RULE
+121=GET_AUTH_RULE
+122=AUTH_RULES
+"
+
 # ====================================================================================
 # getDids
 #   - See getDids.sh for use.
 # ------------------------------------------------------------------------------------
-# This function scans through accessible (based on user access) OCP projects to 
+# This function scans through accessible (based on user access) OCP projects to
 # discover the DIDs associated to Hyperledger Indy and Aries project components.
 # It then scans the Sovrin networks for additional information regarding the
 # DID and it's most recent activity.
@@ -51,6 +88,8 @@ function getDids()
     done
     shift $((OPTIND-1))
 
+    initTxnMap
+
     # von-network needed to convert Seeds into DIDs
     if [ ! -d ./von-network ]; then
       echoWarning "Cloning von-network to $(pwd)/von-network ..."
@@ -88,39 +127,26 @@ function getDids()
           did=$(./manage generatedid ${seed} 2>/dev/null | sed -n 's~^DID: \(.*\)$~\1~p')
           popd >/dev/null
 
-          # Scan for the DID on the Sovrin Ledgers
-          ledgers="SOVRIN_STAGINGNET SOVRIN_MAINNET SOVRIN_BUILDERNET"
-          for ledger in ${ledgers}; do
-            result=$(curl -s "https://indyscan.io/api/networks/${ledger}/ledgers/domain/txs?filterTxNames=%5B%22NYM%22%5D&format=expansion&sortFromRecent=true&search=${did}")
-
-            jqQuery="[.[].idata.txn.data | select(.dest==\"${did}\")][0]"
-            parsedResult=$(echo "${result}" | jq --raw-output "${jqQuery}")
-            if [ ! -z "${parsedResult}" ] && [ "${parsedResult}" != "null" ]; then
-              break;
-            fi
-          done
-
-          if [ ! -z "${parsedResult}" ] && [ "${parsedResult}" != "null" ]; then
-            role=$(echo "${parsedResult}" | jq --raw-output '.role')
-            if [ ${role} == "101" ]; then
-              role="Endorser"
-            fi
-
-            # Get last used date from the most recent txn associated with the DID
-            result=$(curl -s "https://indyscan.io/api/networks/${ledger}/ledgers/domain/txs?size=1&format=expansion&sortFromRecent=true&search=${did}")
-            lastUsedDate=$(echo "${result}" | jq --raw-output '.[0].idata.txnMetadata.txnTime')
-            lastUsedFor=$(echo "${result}" | jq --raw-output '.[0].idata.txn.typeName')
-          else
-            role="Unknown"
-            ledger="Unknown"
-            lastUsedDate="Unknown"
-            lastUsedFor="Unknown"
-          fi
+          scanLedgers "${did}"
 
           didList+="${project},${projectDisplayName},${item%%,*},${did},${ledger},${role},${lastUsedDate},${lastUsedFor}\n"
         done
       fi
     done
+
+    # ====================================================================================================================
+    # For testing and troubleshooting
+    # --------------------------------------------------------------------------------------------------------------------
+    # Sovrin TestNet
+    # did="RznYFPVhHpYZgsn4Hu3StV"
+    # # dev.bcovrin
+    # did="6tGCSqhLKu31BCKRrf7nGe"
+    # # test.bcovrin
+    # did="F5xxSw8bAKBWjNvC43dMbm"
+    # did="NEYQZjF5bs1tTRbCVs5w7Q"
+    # scanLedgers "${did}"
+    # didList+="${project},${projectDisplayName},${item%%,*},${did},${ledger},${role},${lastUsedDate},${lastUsedFor}\n"
+    # ====================================================================================================================
 
     if [ ! -z "${filter}" ]; then
       echo -e "\e[1A\e[KFiltering did list on '${filter}' ..."
@@ -150,4 +176,197 @@ function getDids()
       rm -rf ./von-network
     fi
   )
+}
+
+declare -A txnMap
+function initTxnMap() {
+  for txn_type in ${TXN_TYPES}; do
+    key=${txn_type%%=*}
+    value=${txn_type#*=}
+    txnMap[${key}]=${value}
+  done
+}
+
+# ToDo:
+# - The following functions rely on global variables so there is potential for variables
+#   to get overwritten inadvertently with the wrong data.  This should be addressed,
+#   however at this point things are working as expected.
+function scanLedgers() {
+  local did=${1}
+  ledger="${UNKNOWN}"
+
+  if isLedgerUnknow ${ledger}; then
+    scanSovrinLedgers "${did}"
+  fi
+
+  if isLedgerUnknow ${ledger}; then
+    scanCandyLedgers "${did}"
+  fi
+
+  if isLedgerUnknow ${ledger}; then
+    scanBCovrinLedgers "${did}"
+  fi
+}
+
+function scanSovrinLedgers() {
+  local did=${1}
+  local baseUrl="https://indyscan.io"
+
+  # Scan for the DID on the Sovrin Ledgers
+  ledgers="SOVRIN_STAGINGNET SOVRIN_MAINNET SOVRIN_BUILDERNET"
+  for ledger in ${ledgers}; do
+    scanLedger "${did}" "${ledger}" "${baseUrl}"
+    if isNotNullOrEmpty "${parsedResult}"; then
+      break;
+    fi
+  done
+}
+
+function scanCandyLedgers() {
+  local did=${1}
+  local baseUrl="https://candyscan.idlab.org"
+
+  # Scan for the DID on the CANdy Ledgers
+  ledgers="CANDY_DEV CANDY_TEST CANDY_PROD"
+  for ledger in ${ledgers}; do
+    scanLedger "${did}" "${ledger}" "${baseUrl}"
+    if isNotNullOrEmpty "${parsedResult}"; then
+      break;
+    fi
+  done
+}
+
+function scanBCovrinLedgers() {
+  local did=${1}
+
+  # Scan for the DID on the BCovrin Ledgers
+  # Scan BCovrin Test last, because it takes longer
+  ledgers="dev.bcovrin prod.bcovrin test.bcovrin"
+  for ledger in ${ledgers}; do
+    local baseUrl="http://${ledger}.vonx.io"
+    scanBCovrin "${did}" "${ledger}" "${baseUrl}"
+    if isNotNullOrEmpty "${parsedResult}"; then
+      break;
+    fi
+  done
+}
+
+function scanBCovrin() {
+  local did=${1}
+  ledger=${2}
+  local baseUrl=${3}
+
+  echo -e "\e[1A\e[KScanning ${ledger} for ${did} ..."
+  result=$(curl -G -m ${BCOVRIN_QUERY_TIMEOUT} -s "${baseUrl}/ledger/domain" \
+           -H 'Cache-Control: no-cache, no-store' \
+           -H "accept: application/json" \
+           --data-urlencode "page=1" \
+           --data-urlencode "page_size=10" \
+           --data-urlencode "type=1" \
+           --data-urlencode "query=${did}")
+  getBCovrinData "${did}" "${result}"
+
+  if isNotNullOrEmpty "${parsedResult}"; then
+    getRole "${parsedResult}"
+    # Get last used date from the most recent txn associated with the DID
+    result=$(curl -G -m ${BCOVRIN_QUERY_TIMEOUT} -s "${baseUrl}/ledger/domain" \
+            -H "accept: application/json" \
+            --data-urlencode "page=1" \
+            --data-urlencode "page_size=100" \
+            --data-urlencode "type=" \
+            --data-urlencode "query=${did}")
+    getLastUsedInfo_BCovrin "${result}"
+  else
+    role="${UNKNOWN}"
+    ledger="${UNKNOWN}"
+    lastUsedDate="${UNKNOWN}"
+    lastUsedFor="${UNKNOWN}"
+  fi
+}
+
+function scanLedger() {
+  local did=${1}
+  ledger=${2}
+  local baseUrl=${3}
+
+  echo -e "\e[1A\e[KScanning ${ledger} for ${did} ..."
+  result=$(curl -G -m ${QUERY_TIMEOUT} -s "${baseUrl}/api/networks/${ledger}/ledgers/domain/txs" \
+          -H "accept: application/json" \
+          --data-urlencode "filterTxNames=[\"NYM\"]" \
+          --data-urlencode "format=expansion" \
+          --data-urlencode "sortFromRecent=true" \
+          --data-urlencode "search=${did}")
+  getData "${did}" "${result}"
+
+  if isNotNullOrEmpty "${parsedResult}"; then
+    getRole "${parsedResult}"
+    # Get last used date from the most recent txn associated with the DID
+    result=$(curl -G -m ${QUERY_TIMEOUT} -s "${baseUrl}/api/networks/${ledger}/ledgers/domain/txs" \
+            -H "accept: application/json" \
+            --data-urlencode "size=1" \
+            --data-urlencode "format=expansion" \
+            --data-urlencode "sortFromRecent=true" \
+            --data-urlencode "search=${did}")
+    getLastUsedInfo "${result}"
+  else
+    role="${UNKNOWN}"
+    ledger="${UNKNOWN}"
+    lastUsedDate="${UNKNOWN}"
+    lastUsedFor="${UNKNOWN}"
+  fi
+}
+
+function getData() {
+  local did=${1}
+  local result=${2}
+  jqQuery="[.[].idata.txn.data | select(.dest==\"${did}\")][0]"
+  parsedResult=$(echo "${result}" | jq --raw-output "${jqQuery}")
+}
+
+function getBCovrinData() {
+  local did=${1}
+  local result=${2}
+  jqQuery="[.results[].txn.data | select(.dest==\"${did}\")][0]"
+  parsedResult=$(echo "${result}" | jq --raw-output "${jqQuery}")
+}
+
+function getRole() {
+  local parsedResult=${1}
+  role=$(echo "${parsedResult}" | jq --raw-output '.role')
+  if [ ${role} == "101" ]; then
+    role="Endorser"
+  fi
+}
+
+function getLastUsedInfo() {
+  local result=${1}
+  lastUsedDate=$(echo "${result}" | jq --raw-output '.[0].idata.txnMetadata.txnTime')
+  lastUsedFor=$(echo "${result}" | jq --raw-output '.[0].idata.txn.typeName')
+}
+
+function getLastUsedInfo_BCovrin() {
+  local result=${1}
+
+  lastUsedTimestamp=$(echo "${result}" | jq --raw-output '.results[-1].txnMetadata.txnTime')
+  lastUsedDate=$(date -d @${lastUsedTimestamp} --utc +%Y-%m-%dT%T.%3NZ)
+  lastUsedForTxnTypeCd=$(echo "${result}" | jq --raw-output '.results[-1].txn.type')
+  lastUsedFor=${txnMap[${lastUsedForTxnTypeCd}]}
+}
+
+function isNotNullOrEmpty() {
+  local parsedResult=${1}
+  if [ ! -z "${parsedResult}" ] && [ "${parsedResult}" != "null" ]; then
+    return 0
+  else
+    return 1
+  fi
+}
+
+function isLedgerUnknow() {
+  local leger=${1}
+  if [ "${leger}" == "${UNKNOWN}" ]; then
+    return 0
+  else
+    return 1
+  fi
 }
