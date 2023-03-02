@@ -71,7 +71,6 @@ fi
 # Bash on MacOS does not have the timeout function. We'll check the OS and, if it's MacOS (Darwin) based, we will
 # create a timeout function using Perl. Perl function from this gist https://gist.github.com/jaytaylor/6527607.
 OS=$(uname | tr '[:upper:]' '[:lower:]')
-echo $OS
 if [[ "$OS" == "darwin"* ]]; then
   function timeout() { perl -e 'alarm shift; exec @ARGV' "$@"; }
 fi
