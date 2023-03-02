@@ -115,7 +115,7 @@ for item in ${list}; do
   host=${segments[0]}
   port=${segments[1]}
 
-  _command+="echo -n ${host}:${port} && timeout 1 bash -c \"cat < /dev/null > /dev/tcp/${host}/${port}\" && echo ' - Open' || echo ' - Closed';"
+  _command+="echo -n ${host}:${port} && timeout 1 bash -c \"cat < /dev/null > /dev/tcp/${host}/${port}\" > /dev/null 2>&1 && echo ' - Open' || echo ' - Closed';"
 done
 
 if [ -z "${runInPod}" ]; then
