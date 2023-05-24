@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # ================================================================================================================
-# Usage 
+# Usage
 # ----------------------------------------------------------------------------------------------------------------
 # This is the base script for ALL *.overrides.sh implementations.  It contains uility and initialization functions
 # for your *.overrides.sh script.
@@ -153,7 +153,45 @@ generatePassword() {
   echo ${_password}
 }
 
-generateConfigMap() {  
+generateProfileConfigMap() {
+  _profile=${1}
+  _deployment_env_name=${2}
+  _config_map_name=${3}
+  _config_source_directory=${4}
+  _output_format=${5}
+  _output_file=${6}
+
+  printStatusMsg "Combining profile configuration files ..."
+
+  # ===========================================================================================================================
+  # Combine the profile's default config files with its environment specific config files before generating the config map ...
+  # ---------------------------------------------------------------------------------------------------------------------------
+  configRoot=${_config_source_directory}               # Default configuration files here
+  configEnv=${configRoot}/${_deployment_env_name}      # Environment specific configuration files here
+  profileRoot=${configRoot}/${_profile}                # Profile specific default configuration files here
+  profileEnv=${profileRoot}/${_deployment_env_name}    # Environment specific profile configuration files here
+  profileTmp=${profileRoot}/tmp                        # Temp dir to contain the combined configuration files
+  mkdir -p ${profileTmp}
+
+  printStatusMsg "Copying default configuration files from ${configRoot} to ${profileTmp} ..."
+  cp -f ${configRoot}/* ${profileTmp} 2>/dev/null
+  printStatusMsg "Copying environment specific configuration files from ${configEnv} to ${profileTmp} ..."
+  cp -f ${configEnv}/* ${profileTmp} 2>/dev/null
+  printStatusMsg "Copying profile specific default configuration files from ${profileRoot} to ${profileTmp} ..."
+  cp -f ${profileRoot}/* ${profileTmp} 2>/dev/null
+  printStatusMsg "Copying environment specific profile configuration files from ${profileEnv} to ${profileTmp} ..."
+  cp -f ${profileEnv}/* ${profileTmp} 2>/dev/null
+  # ===========================================================================================================================
+
+  printStatusMsg "Generating ConfigMap; ${_config_map_name} ..."
+  generateConfigMap "${_config_map_name}" "${profileTmp}" "${_output_format}" "${_output_file}"
+
+  # Remove temporary configuration directory and files ...
+  printStatusMsg "Cleaning up ..."
+  rm -rfd ${profileTmp}
+}
+
+generateConfigMap() {
   _config_map_name=${1}
   _source_file=${2}
   _output_format=${3}
@@ -170,7 +208,7 @@ generateConfigMap() {
   else
     _from_file_type="--from-file"
   fi
-  
+
   oc create configmap ${_config_map_name} ${_from_file_type} ${_source_file} --dry-run=client -o ${_output_format} > ${_output_file}
 }
 
