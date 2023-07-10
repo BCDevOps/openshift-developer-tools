@@ -1286,6 +1286,9 @@ getPodByName() {
 
     _podInstanceName=$(getPodNameByLabel "${_podName}" "name" "${_podIndex}")
     if [ -z "${_podInstanceName}" ] ; then
+      _podInstanceName=$(getPodNameByLabel "${_podName}" "app.kubernetes.io/name" "${_podIndex}")
+    fi
+    if [ -z "${_podInstanceName}" ] ; then
       _podInstanceName=$(getPodNameByLabel "${_podName}" "app" "${_podIndex}")
     fi
 
