@@ -50,8 +50,27 @@ TXN_TYPES="
 # Project Name:
 #   - The name (license plate) of the OCP project in which the DID was found.
 #
-# Name:
+# Display Name:
 #   - The resource (component) name associated with the DID.
+#
+# Secret Name:
+#   - The name of the secret resource associated with the DID.
+#
+# Agent Name:
+#   - The name of the deploymentConfig or deployment resource associated with the agent.
+#   - The field can be formatted as a hyperlink by including the '--hyperlink' switch.
+#
+# Agent Version:
+#   - The verison of ACA-Py the agent is running.
+#
+# Instances:
+#   - The number of agent instance running.
+#
+# Storage Type:
+#   - The type of secure storage the agent is using.
+#
+# Storage Type:
+#   - The type of secure storage the agent is using.
 #
 # DID:
 #   - The DID.
@@ -60,23 +79,47 @@ TXN_TYPES="
 #   - The ledger on which the DID resides.  Only the Sovrin networks are scanned.
 #   - Therefore "Unknown" means the DID resides on a ledger other than one of
 #     the Sovrin networks.  This could be any of the BCovrin or CANdy ledgers.
+#   - This field requires a ledger scan, which is a time consuming operation.
+#     The ledger scan can be skipped by including '--no-ledger-scan' switch.
 #
 # Role:
 #   - The role assigned to the DID.  Only the Sovrin networks are scanned.
+#   - This field requires a ledger scan, which is a time consuming operation.
+#     The ledger scan can be skipped by including '--no-ledger-scan' switch.
 #
 # Last Used Date:
 #   - The date associated to the last txn written to the ledger by the DID.
+#   - This field requires a ledger scan, which is a time consuming operation.
+#     The ledger scan can be skipped by including '--no-ledger-scan' switch.
 #
 # Last Used For:
 #   - The last written txn type.
+#   - This field requires a ledger scan, which is a time consuming operation.
+#     The ledger scan can be skipped by including '--no-ledger-scan' switch.
+#
+# Command Line Switches:
+# ----------------------
+# --no-ledger-scan:
+#   - Do not scan ledgers for the DID.  This can be used to save some time
+#     if the informaiton about the DID from the ledgers is not needed.
+#
+# --hyperlink:
+#   - Generate a hyperlink for the agent name.  Turns the agent name into a
+#     clickable link when viewing the csv in excel.
+#     Does not format well for console output.
+#
+# --no-clean:
+#   - Skip the cleanup of the von-network environment.
+#     Useful if you are planning mutiple runs.
 # ====================================================================================
+
 function getDids()
 {
   (
     local OPTIND
     unset local filter
     unset local cluster
-    while getopts f:d: FLAG; do
+    while getopts f:d:-: FLAG; do
       case $FLAG in
         f )
           local filter=${OPTARG}
@@ -84,6 +127,18 @@ function getDids()
         d )
           local cluster=${OPTARG}
           ;;
+        - )
+            case ${OPTARG} in
+                "no-ledger-scan"* )
+                  local no_ledger_scan=1
+              ;;
+                "hyperlink"* )
+                  local hyperlink=1
+              ;;
+                "no-clean"* )
+                  local no_clean=1
+              ;;
+            esac
       esac
     done
     shift $((OPTIND-1))
@@ -108,6 +163,22 @@ function getDids()
       projects=$(getProjectName)
     fi
 
+    if [ ! -z "${no_ledger_scan}" ]; then
+      echoWarning "\nLedger Scan - Disabled"
+    else
+      echoWarning "\nLedger Scan - Enabled"
+    fi
+
+    if [ ! -z "${hyperlink}" ]; then
+      echoWarning "Agent Hyperlink - Enabled"
+    else
+      echoWarning "Agent Hyperlink - Disabled"
+    fi
+
+    if [ ! -z "${no_clean}" ]; then
+      echoWarning "No Clean - Enabled"
+    fi
+
     echo
     echo
     for project in ${projects}; do
@@ -127,9 +198,63 @@ function getDids()
           did=$(./manage generatedid ${seed} 2>/dev/null | sed -n 's~^DID: \(.*\)$~\1~p')
           popd >/dev/null
 
-          scanLedgers "${did}"
+          if [ -z "${no_ledger_scan}" ]; then
+            scanLedgers "${did}"
+          fi
 
-          didList+="${project},${projectDisplayName},${item%%,*},${did},${ledger},${role},${lastUsedDate},${lastUsedFor}\n"
+          agentName=$(echo "${item%%,*}" | sed 's~-wallet-credentials~~g')
+          agentResourceName=$(oc -n ${project} get all -l name=${agentName} 2>/dev/null | grep deployment | awk '{print $1}')
+          if [ -z "${agentResourceName}" ]; then
+            agentResourceName=$(oc -n ${project} get all -l app.kubernetes.io/name=${agentName} 2>/dev/null | grep deployment | awk '{print $1}')
+          fi
+
+          # Defaults
+          agentHyperlink="${agentName}"
+          agentHyperlink="${agentName}"
+          agentVersion="none"
+          availableReplicas="missing"
+          storageType=""
+          if [ ! -z "${agentResourceName}" ]; then
+            agentResourceType="${agentResourceName%%.*}"
+            agentDetails=$(oc -n ${project} get ${agentResourceName} -o json)
+            availableReplicas=$(jq -nr "${agentDetails} | .status.availableReplicas")
+            storageType=$(jq -nr "${agentDetails} | .spec.template.spec.containers[0].env[] | select(.name==\"ACAPY_WALLET_TYPE\").value")
+            if [ -z ${storageType} ]; then
+              agentStartCommand=$(jq -nr "${agentDetails} | .spec.template.spec.containers[0].command | last")
+              storageType=$(echo ${agentStartCommand} | sed -nr 's~.*--wallet-type(.*)~\1~p' | awk '{print $1}' )
+            fi
+
+            agentVersion="n/a"
+            if ((${availableReplicas} >= 1)); then
+              agentVersion=$(FULLY_QUALIFIED_NAMESPACE=${project} runInContainer "${agentName}" "aca-py --version")
+              if (( $? !=0 )); then
+                agentVersion="Error running 'aca-py --version'"
+              fi
+
+              if [ -z ${storageType} ]; then
+                argFile=$(echo ${agentStartCommand} | sed -nr 's~.*--arg-file(.*)~\1~p' | awk '{print $1}' )
+                if [ -z ${argFile} ]; then
+                  agentArs=$(jq -nr "${agentDetails} | .spec.template.spec.containers[0].args | last")
+                  argFile=$(echo ${agentArs} | sed -nr 's~.*--arg-file(.*)~\1~p' | awk '{print $1}' )
+                fi
+                storageType=$(FULLY_QUALIFIED_NAMESPACE=${project} runInContainer "${agentName}" "grep -i wallet-type ${argFile}" | awk '{print $2}')
+              fi
+            fi
+
+            if [ -z "${storageType}" ]; then
+              storageType="not found"
+            else
+              # Remove any quotes from around the storage type string.
+              storageType=$(echo ${storageType} | tr -d \'\")
+            fi
+
+            agentLink="https://console.apps.silver.devops.gov.bc.ca/k8s/ns/${project}/${agentResourceType}s/${agentName}"
+            if [ ! -z "${hyperlink}" ]; then
+              agentHyperlink="\"=HYPERLINK(\"\"${agentLink}\"\",\"\"${agentName}\"\")\""
+            fi
+          fi
+
+          didList+="${project},${projectDisplayName},${item%%,*},${agentHyperlink},${agentVersion},${availableReplicas},${storageType},${did},${ledger},${role},${lastUsedDate},${lastUsedFor}\n"
         done
       fi
     done
@@ -164,14 +289,14 @@ function getDids()
     echo -e "\e[1A\e[K"
     didList=$(echo "${didList}" | sed 's~\\n~\n~g')
     itemCount=$(echo "${didList}" | wc -l)
-    result="$(echo -e "PROJECT:,DISPLAY NAME:,NAME:,DID:,LEDGER:,ROLE:,LAST USED DATE:,LAST USED FOR:\n${didList}")"
+    result="$(echo -e "PROJECT:,DISPLAY NAME:,SECRET NAME:,AGENT NAME:,AGENT VERSION:,INSTANCES:,STORAGE TYPE:,DID:,LEDGER:,ROLE:,LAST USED DATE:,LAST USED FOR:\n${didList}")"
     echoWarning "Writing results to $(pwd)/DID-List.csv ...\n"
     echo "${result}" > DID-List.csv
     echoWarning "Results (${itemCount}):"
     echo "${result}" | column -t -s ,
 
     # Clean-up von-network
-    if [ -d ./von-network ]; then
+    if [ -z "${no_clean}" ] && [ -d ./von-network ]; then
       echoWarning \\n"Removing von-network from $(pwd)/von-network ..."
       rm -rf ./von-network
     fi
