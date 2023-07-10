@@ -14,12 +14,17 @@ usage() {
 
   Commands:
 
-    dids [-f <filter>] [-d <cluster>]
+    dids [-f <filter>] [-d <cluster>] [--no-ledger-scan] [--hyperlink] [--no-clean]
       - Get a list of dids for all the projects in a cluster.
       Options:
-        -f <filter>: The keyword to filter the list on.  For example SOVRIN_STAGINGNET to return only results from Sovrin StagingNet, 
+        -f <filter>: The keyword to filter the list on.  For example SOVRIN_STAGINGNET to return only results from Sovrin StagingNet,
                      or a99fd4-prod to return only results from the a99fd4-prod namespace in OCP.
         -d <cluster>: Defines the target cluster
+        --no-ledger-scan: Do not scan ledgers for the DID.  This can be used to save some time if the informaiton about the DID from
+                          the ledgers is not needed.
+        --hyperlink: Generate a hyperlink for the agent name.  Turns the agent name into a clickable link when viewing the csv in excel.
+                     Does not format well for console output.
+        --no-clean: Skip the cleanup of the von-network environment.  Useful if you are planning mutiple runs.
       Examples:
         ${0} dids
         ${0} dids -f SOVRIN
@@ -32,9 +37,16 @@ EOF
 # - The 'getopts' options string must start with ':' for this to work.
 # -----------------------------------------------------------------------------------------------------------------
 while [ ${OPTIND} -le $# ]; do
-  if getopts : FLAG; then
+  if getopts :-: FLAG; then
+
+    # echo ${FLAG}
+    # echo ${OPTARG}
+
     case ${FLAG} in
       # List of local options:
+
+      # Pass any switches  ...
+      - ) switches+=" --${OPTARG}" ;;
 
       # Pass unrecognized options ...
       \?) pass+=" -${OPTARG}" ;;
@@ -106,7 +118,7 @@ shift
 
 case "${_cmd}" in
   dids)
-    getDids ${@}
+    getDids ${@} ${switches}
     ;;
 
   *)
