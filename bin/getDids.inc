@@ -69,8 +69,8 @@ TXN_TYPES="
 # Storage Type:
 #   - The type of secure storage the agent is using.
 #
-# Storage Type:
-#   - The type of secure storage the agent is using.
+# Endorser Role:
+#   - The agent's endorser role.
 #
 # DID:
 #   - The DID.
@@ -214,31 +214,61 @@ function getDids()
           agentVersion="none"
           availableReplicas="missing"
           storageType=""
+          endorserRole=""
           if [ ! -z "${agentResourceName}" ]; then
+            # Get agent resource information ...
             agentResourceType="${agentResourceName%%.*}"
             agentDetails=$(oc -n ${project} get ${agentResourceName} -o json)
+            agentStartCommand=$(jq -nr "${agentDetails} | .spec.template.spec.containers[0].command | last")
+            argFile=$(echo ${agentStartCommand} | sed -nr 's~.*--arg-file(.*)~\1~p' | awk '{print $1}' )
+            if [ -z ${argFile} ]; then
+              agentArs=$(jq -nr "${agentDetails} | .spec.template.spec.containers[0].args | last")
+              argFile=$(echo ${agentArs} | sed -nr 's~.*--arg-file(.*)~\1~p' | awk '{print $1}' )
+            fi
+            if [[ "${argFile}" == "\${"* ]]; then
+              # argFile is an environmnet variable - resolve it ...
+              argFileVar=$(echo ${argFile} | tr -d \$\{\})
+              argFile=$(jq -nr "${agentDetails} | .spec.template.spec.containers[0].env[] | select(.name==\"${argFileVar}\").value")
+            fi
+
+            # Instance Count
             availableReplicas=$(jq -nr "${agentDetails} | .status.availableReplicas")
+
+            # Endorser Role
+            endorserRole=$(jq -nr "${agentDetails} | .spec.template.spec.containers[0].env[] | select(.name==\"ACAPY_ENDORSER_ROLE\").value")
+            if [ -z ${endorserRole} ]; then
+              endorserRole=$(echo ${agentStartCommand} | sed -nr 's~.*--endorser-protocol-role(.*)~\1~p' | awk '{print $1}' )
+            fi
+
+            # Storage Type
             storageType=$(jq -nr "${agentDetails} | .spec.template.spec.containers[0].env[] | select(.name==\"ACAPY_WALLET_TYPE\").value")
             if [ -z ${storageType} ]; then
-              agentStartCommand=$(jq -nr "${agentDetails} | .spec.template.spec.containers[0].command | last")
               storageType=$(echo ${agentStartCommand} | sed -nr 's~.*--wallet-type(.*)~\1~p' | awk '{print $1}' )
             fi
 
+            # Fetch details that can only be collected from a running instance ...
             agentVersion="n/a"
             if ((${availableReplicas} >= 1)); then
-              agentVersion=$(FULLY_QUALIFIED_NAMESPACE=${project} runInContainer "${agentName}" "aca-py --version")
+
+              # ACA-Py version
+              agentVersion=$(FULLY_QUALIFIED_NAMESPACE=${project} runInContainer "${agentName}" "aca-py --version" 2>/dev/null)
               if (( $? !=0 )); then
                 agentVersion="Error running 'aca-py --version'"
               fi
 
+              # Storage Type - when defined in the instance's arg file.
               if [ -z ${storageType} ]; then
-                argFile=$(echo ${agentStartCommand} | sed -nr 's~.*--arg-file(.*)~\1~p' | awk '{print $1}' )
-                if [ -z ${argFile} ]; then
-                  agentArs=$(jq -nr "${agentDetails} | .spec.template.spec.containers[0].args | last")
-                  argFile=$(echo ${agentArs} | sed -nr 's~.*--arg-file(.*)~\1~p' | awk '{print $1}' )
-                fi
-                storageType=$(FULLY_QUALIFIED_NAMESPACE=${project} runInContainer "${agentName}" "grep -i wallet-type ${argFile}" | awk '{print $2}')
+                storageType=$(FULLY_QUALIFIED_NAMESPACE=${project} runInContainer "${agentName}" "grep -i wallet-type ${argFile}" 2>/dev/null | awk '{print $2}')
               fi
+
+              # Endorser Role - when defined in the instance's arg file.
+              if [ -z ${endorserRole} ]; then
+                endorserRole=$(FULLY_QUALIFIED_NAMESPACE=${project} runInContainer "${agentName}" "grep -i endorser-protocol-role \"${argFile}\"" 2>/dev/null | awk '{print $2}')
+              fi
+            fi
+
+            if [ -z "${endorserRole}" ]; then
+              endorserRole="none"
             fi
 
             if [ -z "${storageType}" ]; then
@@ -254,7 +284,7 @@ function getDids()
             fi
           fi
 
-          didList+="${project},${projectDisplayName},${item%%,*},${agentHyperlink},${agentVersion},${availableReplicas},${storageType},${did},${ledger},${role},${lastUsedDate},${lastUsedFor}\n"
+          didList+="${project},${projectDisplayName},${item%%,*},${agentHyperlink},${agentVersion},${availableReplicas},${storageType},${endorserRole},${did},${ledger},${role},${lastUsedDate},${lastUsedFor}\n"
         done
       fi
     done
@@ -289,7 +319,7 @@ function getDids()
     echo -e "\e[1A\e[K"
     didList=$(echo "${didList}" | sed 's~\\n~\n~g')
     itemCount=$(echo "${didList}" | wc -l)
-    result="$(echo -e "PROJECT:,DISPLAY NAME:,SECRET NAME:,AGENT NAME:,AGENT VERSION:,INSTANCES:,STORAGE TYPE:,DID:,LEDGER:,ROLE:,LAST USED DATE:,LAST USED FOR:\n${didList}")"
+    result="$(echo -e "PROJECT:,DISPLAY NAME:,SECRET NAME:,AGENT NAME:,AGENT VERSION:,INSTANCES:,STORAGE TYPE:,ENDORSER ROLE:,DID:,LEDGER:,ROLE:,LAST USED DATE:,LAST USED FOR:\n${didList}")"
     echoWarning "Writing results to $(pwd)/DID-List.csv ...\n"
     echo "${result}" > DID-List.csv
     echoWarning "Results (${itemCount}):"
