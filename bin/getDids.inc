@@ -398,8 +398,15 @@ function scanBCovrinLedgers() {
   # Scan BCovrin Test last, because it takes longer
   ledgers="dev.bcovrin prod.bcovrin test.bcovrin"
   for ledger in ${ledgers}; do
-    local baseUrl="http://${ledger}.vonx.io"
-    scanBCovrin "${did}" "${ledger}" "${baseUrl}"
+    if [ ${ledger} == "test.bcovrin" ]; then
+      local baseUrl="http://test.bcovrin.vonx.io:3707"
+      ledger="BCOVRIN_TEST"
+      scanLedger "${did}" "${ledger}" "${baseUrl}"
+    else
+      local baseUrl="http://${ledger}.vonx.io"
+      scanBCovrin "${did}" "${ledger}" "${baseUrl}"
+    fi
+
     if isNotNullOrEmpty "${parsedResult}"; then
       break;
     fi
